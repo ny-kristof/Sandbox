@@ -7,6 +7,7 @@ import DraftGeomUtils # type: ignore
 import Sketcher
 import xml.etree.ElementTree as ET
 import SubSurfaceCreator
+from BOPTools import SplitFeatures
 
 # import ptvsd
 # print("Waiting for debugger attach")
@@ -36,7 +37,7 @@ class SelectionPlanner:
                     # return
             
             self.Panel.textbox.clear()
-            
+
             if len(sel.SubObjects) == 1:
                 if(sel.SubObjects[0].ShapeType == "Edge"):
                     #self.createEdgeExtensionRectangles(sel, sel.SubObjects[0])
@@ -47,11 +48,12 @@ class SelectionPlanner:
             elif len(sel.SubObjects) == 2:
                 if(sel.SubObjects[0].ShapeType == "Face" and sel.SubObjects[1].ShapeType == "Face"):
                     self.handle2FaceSelection(sel)
-                    
-                elif self.isEdgeLine(sel.SubObjects[0]) == "line" and self.isEdgeLine(sel.SubObjects[1]) == "line":
+                elif self.edgeType(sel.SubObjects[0]) == "line" and self.edgeType(sel.SubObjects[1]) == "line":
                     self.handle2EdgeSelection(sel)
-                elif self.isEdgeLine(sel.SubObjects[0]) == "circle" and self.isEdgeLine(sel.SubObjects[1]) == "circle":
+                elif self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "circle":
                     self.handle2CircleSelection(sel)
+                elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.faceType(sel.SubObjects[1]) == "cylinder") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.faceType(sel.SubObjects[0]) == "cylinder"):
+                    self.handleCircleAndCylinderSelection(sel)
                 else:
                     QtWidgets.QMessageBox.information(None, "Error","Invalid selection pair.") # type: ignore
                 
@@ -72,7 +74,7 @@ class SelectionPlanner:
             return
         measurement_node = self.createMeasurementNode()
 
-        SubSurfaceCreator.createNeighborSubsurfaces(sel, sel.SubObjects[0], aroundVertex=True , measurement_node = measurement_node)
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, sel.SubObjects[0], aroundVertex=True , measurement_node = measurement_node)
         #TODO: Ez nagy hekk, használjuk mindenképpen, meg a discretise függvényt is, felosztja pl az élt
         
         #DEPRECATED
@@ -125,7 +127,7 @@ class SelectionPlanner:
         # FreeCADGui.runCommand('Std_Measure',0)
         measurement_node = self.createMeasurementNode()
         for i, edge in enumerate(sel.SubObjects):
-            SubSurfaceCreator.createNeighborSubsurfaces(sel, edge, aroundVertex=False, measurement_node = measurement_node)
+            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, aroundVertex=False, measurement_node = measurement_node)
 
         
         for i,face in enumerate(sel.Object.Shape.Faces):
@@ -140,7 +142,85 @@ class SelectionPlanner:
                     FreeCADGui.Selection.addSelection(sel.Object, f"Face{i+1}")
 
     def handle2CircleSelection(self, sel):
-        raise NotImplementedError("handle2CircleSelection is not implemented yet.")
+        circle1 = sel.SubObjects[0]
+        circle2 = sel.SubObjects[1]
+        if not self.areCirclesCoplanar(circle1, circle2):
+            QtWidgets.QMessageBox.information(None, "Error","The selected circles are not coplanar") # type: ignore
+            return
+        
+        measurement_node = self.createMeasurementNode()
+        for i, circle in enumerate(sel.SubObjects):
+            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, aroundVertex=False, measurement_node = measurement_node)
+
+    def handleCircleAndCylinderSelection(self, sel):
+        doc = FreeCAD.ActiveDocument
+        circle: Part.Edge = None
+        cylinder: Part.Cylinder = None
+        if self.edgeType(sel.SubObjects[0]) == "circle":
+            circle = sel.SubObjects[0]
+            cylinder = sel.SubObjects[1]
+        elif self.edgeType(sel.SubObjects[1]) == "circle":
+            circle = sel.SubObjects[1]
+            cylinder = sel.SubObjects[0]
+        else:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a circle and a cylinder") # type: ignore
+
+        if not circle or not cylinder:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a circle and a cylinder") # type: ignore
+
+        center = circle.Curve.Center
+        normal = circle.Curve.Axis.normalize()
+
+        bbox = sel.Object.Shape.BoundBox
+        plane_size = 2 * max(bbox.XLength, bbox.YLength, bbox.ZLength)
+
+        # Create a rectangular Part Plane
+        plane = Part.makePlane(plane_size, plane_size, center, normal)
+        # shift the plane to the center of the circle
+        plane.translate(center.sub(plane.CenterOfMass))
+        # Add the plane to the FreeCAD document
+        plane_obj = doc.addObject("Part::Feature", "CirclePlane")
+        plane_obj.Shape = plane
+        doc.recompute()
+
+        section = cylinder.section(plane)
+        if not section:
+            QtWidgets.QMessageBox.information(None, "Error","The circle and cylinder do not intersect") # type: ignore
+            doc.removeObject(plane_obj.Label)
+            return
+            
+        doc.removeObject(plane_obj.Label)
+
+        section_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "CircleSection")
+        section_obj.Shape = section
+
+        bool_frag = SplitFeatures.makeBooleanFragments(name="CircleSectionFragments")
+        bool_frag.Objects = [section_obj, sel.Object]
+        bool_frag.Mode = 'Standard'
+        bool_frag.Proxy.execute(bool_frag)
+        doc.recompute()
+        if not bool_frag.Shape:
+            QtWidgets.QMessageBox.information(None, "Error","The boolean fragments could not be created") # type: ignore
+            return
+        measurement_node = self.createMeasurementNode()
+        for edge in section_obj.Shape.Edges:
+            frag_edge = SubSurfaceCreator.findEdgeOnObject(bool_frag.Shape, edge)
+            if frag_edge:
+                SubSurfaceCreator.createNeighborSubsurfaces(bool_frag, frag_edge, aroundVertex=False, measurement_node = measurement_node)
+            else:
+                print(f"Edge {edge} not found in boolean fragments shape.")
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, aroundVertex=False, measurement_node = measurement_node)
+        
+        doc.removeObject(bool_frag.Label)
+        doc.removeObject(section_obj.Label)
+        doc.recompute()
+
+
+
+
+        
+
+
     #endregion
     
     #region Helper functions
@@ -171,8 +251,16 @@ class SelectionPlanner:
         # print(abs(normal1.dot(normal2) / (normal1.Length * normal2.Length)))
         # return abs(abs(normal1.dot(normal2) / (normal1.Length * normal2.Length))-1) < tol
         return normal1.cross(normal2).Length < tol
+    
+    def areCirclesCoplanar(self, circle1, circle2):
+        tol = 1e-07
+        normal1 = circle1.Curve.Axis.normalize()
+        normal2 = circle2.Curve.Axis.normalize()
+        centersVector = circle2.Curve.Center.sub(circle1.Curve.Center)
+        return normal1.dot(centersVector) < tol and normal2.dot(centersVector) < tol
+
         
-    def isEdgeLine(self, subobj):
+    def edgeType(self, subobj):
         if subobj.ShapeType == "Edge":
             if isinstance(subobj.Curve, Part.Line):
                 return "line"
@@ -180,6 +268,17 @@ class SelectionPlanner:
                 return "circle"
         return ""
        # return subobj.ShapeType == "Edge" and isinstance(subobj.Curve, Part.Line)
+
+    def faceType(self, subobj):
+        if subobj.ShapeType == "Face":
+            if isinstance(subobj.Surface, Part.Plane):
+                return "plane"
+            elif isinstance(subobj.Surface, Part.Cylinder):
+                return "cylinder"
+            elif isinstance(subobj.Surface, Part.Sphere):
+                return "sphere"
+        return ""
+       # return subobj.ShapeType == "Face" and isinstance(subobj.Surface, Part.Plane)
     
     def notParallelAndNotSkew(self, line1, line2):
         tol = 1e-07

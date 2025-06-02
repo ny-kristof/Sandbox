@@ -42,6 +42,16 @@ class TaskPanel:
         row_layout3.addStretch()
         row_layout3.addWidget(button3)
         layout.addLayout(row_layout3)
+
+        # Button and Label
+        row_layout4 = QtWidgets.QHBoxLayout()
+        label4 = QtWidgets.QLabel("Measure two parallel circles: ")
+        button4 = QtWidgets.QPushButton("Get measurement")
+        button4.clicked.connect(self.Planner.getElementsFromSelection)
+        row_layout4.addWidget(label4)
+        row_layout4.addStretch()
+        row_layout4.addWidget(button4)
+        layout.addLayout(row_layout4)
         
         
         #Textbox do display information

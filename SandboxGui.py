@@ -5,6 +5,7 @@ import FreeCADGui
 import os
 import SelObserver
 import TaskPanel
+import SectionPanel
 
 __dir__ = os.path.dirname(__file__)
 observer = None
@@ -178,3 +179,49 @@ class RestartFreeCADCommand:
         return True
 
 FreeCADGui.addCommand('Sandbox_RestartFreeCADCommand', RestartFreeCADCommand())
+
+class MakeSectionCommand:
+    def GetResources(self):
+        return {
+            'Pixmap': __dir__ + '/icons/CrossSections.svg',
+            'MenuText': 'Make Section',
+            'ToolTip': 'Creates a section of the selected object'
+        }
+
+    def Activated(self):
+        # sel = FreeCADGui.Selection.getSelectionEx()
+        # if not sel:
+        #     App.Console.PrintMessage("No object selected.\n")
+        #     return
+
+        # obj = sel[0]
+        # subObjects = obj.SubObjects
+        # if not subObjects:
+        #     App.Console.PrintMessage("Selected object has no sub-objects.\n")
+        #     return
+        # for sub in subObjects:
+        #     if not (sub.ShapeType == "Face" and type(sub.Surface).__name__ == "Cylinder"):
+        #         QtWidgets.QMessageBox.information(None, "Error", "Please select cylinders to section") # type: ignore
+        #         return
+        # axis = subObjects[0].Surface.Axis
+        # if not axis:
+        #     App.Console.PrintMessage("Selected object does not have a valid axis.\n")
+        #     return
+        # for sub in subObjects:
+        #     if not sub.Surface.Axis.cross(axis).Length < 1e-7:
+        #         QtWidgets.QMessageBox.information(None, "Error", "Please select cylinders that has the same axis") # type: ignore
+        #         return
+            
+        task_panel = SectionPanel.SectionPanel()
+        FreeCADGui.Control.showDialog(task_panel)
+        
+
+        
+        # if not hasattr(obj, 'Shape'):
+        #     App.Console.PrintMessage("Selected object does not have a shape.\n")
+        #     return
+
+    def IsActive(self):
+        return True
+    
+FreeCADGui.addCommand('Sandbox_MakeSectionCommand', MakeSectionCommand())

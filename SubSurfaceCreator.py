@@ -3,18 +3,22 @@ import FreeCADGui as Gui
 import Part
 from FreeCAD import Vector
 from Part import BRepOffsetAPI
-from BOPTools import BOPFeatures
+from BOPTools import BOPFeatures, SplitFeatures
+# from Part import BOPTools
 import xml.etree.ElementTree as ET
 
-def createNeighborSubsurfaces(sel, edge, resolution = 0.5, radius = 1, aroundVertex = False, measurement_node = None):
+def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, aroundVertex = False, measurement_node = None):
 
     doc = App.ActiveDocument
     if doc is None:
         print("No active document. Please open a FreeCAD document.")
         return
-    if not sel or not sel.SubObjects:
-        print("No subobject selected. Please select a subobject.")
+    if not object or not edge:
+        print("No object or edge selected. Please select an object and an edge.")
         return
+    # if not sel or not sel.SubObjects:
+    #     print("No subobject selected. Please select a subobject.")
+    #     return
 
     path_edge = edge
     start_point = path_edge.Vertexes[0].Point
@@ -66,15 +70,104 @@ def createNeighborSubsurfaces(sel, edge, resolution = 0.5, radius = 1, aroundVer
 
         # Create the union of the sweep and the spheres
         bp = BOPFeatures.BOPFeatures(App.activeDocument())
-        sweepAndSpheres =  bp.make_multi_fuse(["Sweep", "EndSphere1", "EndSphere2", ])
+        sweepAndSpheres =  bp.make_multi_fuse(["EndSphere1", "Sweep", "EndSphere2", ])
+        # sweepAndSpheres =  bp.make_multi_fuse(["Sweep", "EndSphere1", "EndSphere2", ])
     else:
         sweepAndSpheres = sweep
 
-    print("Selection object: ", sel.Object.Name)
+    ## A DUPLA KOMMENTES RÉSZ AZ EGÉSZ MÁSIK MÓDSZER AMIT SZÉTTÖRTE AZ OBJEKTUMOT NÉHA
+    # # doc.recompute()
+    # # section = object.Shape.section(sweepAndSpheres.Shape)
+    # # section_obj = doc.addObject("Part::Feature", "Section")
+    # # section_obj.Shape = section
+
+    # # # Remove sweep amd spheres from the document
+    # # doc.removeObject(sweepAndSpheres.Label)
+    # # if aroundVertex and endSphere1 and endSphere2: # type: ignore
+    # #     doc.removeObject(sweep.Label)
+    # #     doc.removeObject(endSphere1.Label) # type: ignore
+    # #     doc.removeObject(endSphere2.Label) # type: ignore
+    # # doc.removeObject(profile.Label)
+    # # doc.removeObject(spine.Label)
+    # # doc.recompute()
+
+    # # #EXPERIMENTAL
+    # # # splitter = BOPTools.Splitter()
+    # # # splitter.addArgument(object)
+    # # # toolsForSplitter = []
+    # # # for sectionEdge in section_obj.Shape.Edges:
+    # # #     toolsForSplitter.append(sectionEdge)
+    # # # if toolsForSplitter:
+    # # #     splitter.addTools(toolsForSplitter)
+    # # # splitter.perform()
+    # # # error = splitter.getError()
+    # # # newShape = None
+    # # # if error:
+    # # #     print("Splitter error: ", error)
+    # # # else:
+    # # #     newShape = splitter.shape()
+    # # #END EXPERIMENTAL
+
+    # # # bp = BOPFeatures.BOPFeatures(App.activeDocument())
+    # # # pleasework = bp.make_multi_fuse(["Section", "25-HU100-001-9001-M", ])
+    # # # pleasework_obj = doc.addObject("Part::Feature", "Pleasework")
+    # # # pleasework_obj.Shape = pleasework
+    # # # doc.recompute()
+
+
+
+
+
+    # # # Create boolean fragments of the object and the section
+    # # bool_frag = SplitFeatures.makeBooleanFragments(name="BooleanFragments13")
+    # # bool_frag.Objects = [object, section_obj]
+    # # bool_frag.Mode = 'CompSolid'
+    # # bool_frag.Proxy.execute(bool_frag)
+
+    # # frag_edge = findEdgeOnObject(bool_frag.Shape, path_edge)
+    # # if frag_edge is None:
+    # #     print("No edge found in boolean fragments that matches the path edge.")
+    # #     return
+    
+    # # print("frag_edge: ", frag_edge.Vertexes[0].Point)
+    # # # return
+
+    # # elements_toMeasure = []
+    # # if aroundVertex:
+    # #     for vertex in frag_edge.Vertexes:
+    # #         vertexfaces = bool_frag.Shape.ancestorsOfType(vertex, Part.Face)
+    # #         for face in vertexfaces:
+    # #             if not any(face.isSame(f) for f in elements_toMeasure):
+    # #                 elements_toMeasure.append(face)
+    # # else:
+    # #     for face in bool_frag.Shape.Faces:
+    # #         if any(frag_edge.isPartner(e) for e in face.Edges):
+    # #             #print("Face found in boolean fragments!")
+    # #             elements_toMeasure.append(face)
+    
+    # # doc.removeObject(bool_frag.Label)
+    # # doc.removeObject(section_obj.Label)
+
+    # # if elements_toMeasure:
+    # #     createOffsetToFaces(elements_toMeasure)
+    # #     for i , face in enumerate(elements_toMeasure):
+    # #         points, normals = sample_surface_by_spacing(face, resolution)
+    # #         addFaceToMeasurementXML(face, points, normals, measurement_node, i)
+    
+    # # doc.recompute()
+    
+
+
+
+
+
+    # return
+    
+    print("Selection object: ", object.Name)
     print("Sweep object: ", sweepAndSpheres.Label)
     doc.recompute()
     bp = BOPFeatures.BOPFeatures(App.activeDocument())
-    common = bp.make_multi_common([sel.Object.Name, sweepAndSpheres.Label])
+    common = bp.make_multi_common([object.Name, sweepAndSpheres.Label])
     doc.recompute()
     mycommon = doc.addObject("Part::Feature", "MyCommon")
     mycommon.Shape = common.Shape
@@ -87,27 +180,38 @@ def createNeighborSubsurfaces(sel, edge, resolution = 0.5, radius = 1, aroundVer
         doc.removeObject(endSphere2.Label) # type: ignore
     doc.removeObject(profile.Label)
     doc.removeObject(spine.Label)
-    sel.Object.Visibility = True
+    object.Visibility = True
     doc.recompute()
 
-    def midpoint(edge):
-        return edge.Curve.value((edge.FirstParameter + edge.LastParameter) / 2)
-    edgeOnCommon = None
-    for edge in mycommon.Shape.Edges:
-        #if edge.isSame(path_edge):
-        #Bro ezt én írtam, de nem értem elsőre, hogy miért működik. 
-        # A felső sor helyett van, ami azért nem működik, mert a path_edge nem egyenlő a közös shape edgjeivel, mivel a common művelet nem tökéletesen ugyanazt az élet adja.
-        if all(any(v.Point.isEqual(ev.Point, 1e-07) for ev in edge.Vertexes) for v in path_edge.Vertexes) and midpoint(edge).isEqual(midpoint(path_edge), 1e-07):  #<-- Ez azért kell, mert a path_edge nem pontosan egyenlő a common shape edgjeivel. Nincs látható lassulás
-            print("Edge found in common shape!")
-            edgeOnCommon = edge
-            break
+    edgeOnCommon = findEdgeOnObject(mycommon.Shape, path_edge)
+    edgeOnCommon_obj = doc.addObject("Part::Feature", "EdgeOnCommon")
+    edgeOnCommon_obj.Shape = edgeOnCommon
+    bool_frag = createBoolFragment([edgeOnCommon_obj, mycommon])
+    doc.recompute()
+    edgeOnCommon = findEdgeOnObject(bool_frag.Shape, path_edge)
+    # # for face in mycommon.Shape.Faces:
+    # #     print(f"Face {face} isInside selection object: {face.isInside(sel.Object.Shape, 1e-5, True)}")
+    # for edge in mycommon.Shape.Edges:
+    #     #if edge.isSame(path_edge):
+    #     #Bro ezt én írtam, de nem értem elsőre, hogy miért működik. 
+    #     # A felső sor helyett van, ami azért nem működik, mert a path_edge nem egyenlő a közös shape edgjeivel, mivel a common művelet nem tökéletesen ugyanazt az élet adja.
+    #     if all(any(v.Point.isEqual(ev.Point, 1e-07) for ev in edge.Vertexes) for v in path_edge.Vertexes) and midpoint(edge).isEqual(midpoint(path_edge), 1e-07):  #<-- Ez azért kell, mert a path_edge nem pontosan egyenlő a common shape edgjeivel. Nincs látható lassulás
+    #         print("Edge found in common shape!")
+    #         edgeOnCommon = edge
+    #         break
     elementsToMeasure = []
     print("is edgeOnCommon None: ", edgeOnCommon is None)
+    # TODO: refactor this similar to the other solution above
     if edgeOnCommon is not None:
         face_index = 0
         for v in edgeOnCommon.Vertexes:
-            facesOfVertex = mycommon.Shape.ancestorsOfType(v, Part.Face)
+            facesOfVertex = bool_frag.Shape.ancestorsOfType(v, Part.Face)
             print(f"number of faces of vertex {v}: ", len(facesOfVertex))
+            # if len(facesOfVertex) == 0:
+            #     for face in mycommon.Shape.Faces:
+            #         if face.isInside(v.Point, 1e-07, True):
+            #             facesOfVertex.append(face)
+            # print(f"number of faces of vertex {v} again: {len(facesOfVertex)}")
             for face in facesOfVertex:
                 if not any(face.isSame(f) for f in elementsToMeasure) and (aroundVertex or any(edgeOnCommon.isSame(e) for e in face.Edges)):
                     elementsToMeasure.append(face)
@@ -117,8 +221,32 @@ def createNeighborSubsurfaces(sel, edge, resolution = 0.5, radius = 1, aroundVer
                     face_index += 1
     print("Number of elements to measure: ", len(elementsToMeasure))
     createOffsetToFaces(elementsToMeasure)
+    doc.removeObject(bool_frag.Label)
     doc.removeObject(mycommon.Label)
     doc.recompute()
+
+def findEdgeOnObject(shape, edge):
+    """
+    Finds an edge in a shape that matches the given edge.
+    This function checks if the edge is present in the shape's edges.
+    """
+    for e in shape.Edges:
+        if all(any(v.Point.isEqual(ev.Point, 1e-07) for ev in e.Vertexes) for v in edge.Vertexes) and midpoint(e).isEqual(midpoint(edge), 1e-07):
+            return e
+    return None
+
+def createBoolFragment(objectlist = []):
+    bool_frag = SplitFeatures.makeBooleanFragments(name="BooleanFragments")
+    bool_frag.Objects = objectlist
+    bool_frag.Mode = 'CompSolid'
+    bool_frag.Proxy.execute(bool_frag)
+    return bool_frag
+    
+    
+
+
+def midpoint(edge):
+    return edge.Curve.value((edge.FirstParameter + edge.LastParameter) / 2)
 
 def addFaceToMeasurementXML(face, points, normals, measurement_node, face_index, point_density = 0.1):
     if measurement_node is None:
