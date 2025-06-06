@@ -3,6 +3,7 @@ import FreeCADGui
 import FreeCAD
 import Part
 import SelectionPlanner
+import CSExporter
 import xml.etree.ElementTree as ET
 
 class TaskPanel:
@@ -52,8 +53,17 @@ class TaskPanel:
         row_layout4.addStretch()
         row_layout4.addWidget(button4)
         layout.addLayout(row_layout4)
-        
-        
+
+        # Button and Label for Plane and Line measurement
+        row_layout5 = QtWidgets.QHBoxLayout()
+        label5 = QtWidgets.QLabel("Measure Plane and Line: ")
+        button5 = QtWidgets.QPushButton("Get measurement")
+        button5.clicked.connect(self.Planner.getElementsFromSelection)
+        row_layout5.addWidget(label5)
+        row_layout5.addStretch()
+        row_layout5.addWidget(button5)
+        layout.addLayout(row_layout5)
+
         #Textbox do display information
         self.textbox = QtWidgets.QTextEdit()
         self.textbox.setReadOnly(True)
@@ -67,6 +77,7 @@ class TaskPanel:
     
 
     def accept(self):
+        CSExporter.add_coordinate_systems_to_xml(self.Planner.root_node)
         tree = ET.ElementTree(self.Planner.root_node)
         tree.write("C:\\Users\\nyomarkay.kristof\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
         for dim in self.dimensions:

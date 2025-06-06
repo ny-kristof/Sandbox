@@ -19,7 +19,10 @@ class SelectionPlanner:
 
     def __init__(self, TaskPanel):
         self.Panel = TaskPanel
-        self.root_node = ET.Element("Measurements")
+        self.normals_resolution = 0.5  # Default resolution for normals
+        self.root_node = ET.Element("Part")
+        self.measurements_node = ET.SubElement(self.root_node, "Measurements")
+        self.measurements_node.set("spacing", str(self.normals_resolution))
         self.measurement_index = 0
         #root_node.set("spacing", str(resolution))
 
@@ -38,6 +41,14 @@ class SelectionPlanner:
             
             self.Panel.textbox.clear()
 
+            #ONLY FOR TESTING, PLACE INTO SEPARATE FEATURE LATER
+            if self.isObjectSketch(FreeCADGui.Selection.getSelection()[0]):
+                print("Sketch selected")
+                sel = FreeCADGui.Selection.getSelection()[0]
+                self.handleSketchSelection(sel)
+                return
+            #END OF TESTING
+
             if len(sel.SubObjects) == 1:
                 if(sel.SubObjects[0].ShapeType == "Edge"):
                     #self.createEdgeExtensionRectangles(sel, sel.SubObjects[0])
@@ -54,6 +65,12 @@ class SelectionPlanner:
                     self.handle2CircleSelection(sel)
                 elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.faceType(sel.SubObjects[1]) == "cylinder") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.faceType(sel.SubObjects[0]) == "cylinder"):
                     self.handleCircleAndCylinderSelection(sel)
+                elif (
+                    (self.edgeType(sel.SubObjects[0]) in ["line", "circle"] and self.faceType(sel.SubObjects[1]) == "plane") or
+                    (self.edgeType(sel.SubObjects[1]) in ["line", "circle"] and self.faceType(sel.SubObjects[0]) == "plane")):
+                    self.handleEdgeAndPlaneSelection(sel)
+                elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "line") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.edgeType(sel.SubObjects[0]) == "line"):
+                    self.handleCircleAndLineSelection(sel)
                 else:
                     QtWidgets.QMessageBox.information(None, "Error","Invalid selection pair.") # type: ignore
                 
@@ -73,8 +90,9 @@ class SelectionPlanner:
         if not sel.SubObjects[0]:
             return
         measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeLengthMeasurement")
 
-        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, sel.SubObjects[0], aroundVertex=True , measurement_node = measurement_node)
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, sel.SubObjects[0], resolution= self.normals_resolution, aroundVertex=True , measurement_node = measurement_node, measurement_group = measurement_group)
         #TODO: Ez nagy hekk, használjuk mindenképpen, meg a discretise függvényt is, felosztja pl az élt
         
         #DEPRECATED
@@ -103,11 +121,12 @@ class SelectionPlanner:
             print("len vertices of face1: ", len(face1.Vertexes))
             self.Panel.textbox.append(f"You selected two parallel faces with distance of {distance}\n")
             measurement_node = self.createMeasurementNode()
+            measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceDistanceMeasurement")
             faces = [face1, face2]
             for i, face in enumerate(faces):
-                points, normals = SubSurfaceCreator.sample_surface_by_spacing(face)
+                points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
                 SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node, i)
-                SubSurfaceCreator.createOffsetToFaces(face)
+                SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         else:
             QtWidgets.QMessageBox.information(None, "Error","Selected faces are not parallel") # type: ignore
             return
@@ -126,11 +145,11 @@ class SelectionPlanner:
         # FreeCAD.ActiveDocument.recompute()
         # FreeCADGui.runCommand('Std_Measure',0)
         measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeDistanceMeasurement")
         for i, edge in enumerate(sel.SubObjects):
-            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, aroundVertex=False, measurement_node = measurement_node)
+            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
-        
-        for i,face in enumerate(sel.Object.Shape.Faces):
+        for i, face in enumerate(sel.Object.Shape.Faces):
             for s in sel.SubObjects:
                 contToNextLine = False
                 for v in s.Vertexes:
@@ -149,8 +168,31 @@ class SelectionPlanner:
             return
         
         measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleDistanceMeasurement")
         for i, circle in enumerate(sel.SubObjects):
-            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, aroundVertex=False, measurement_node = measurement_node)
+            SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
+
+    def handleCircleAndLineSelection(self, sel):
+        circle: Part.Edge = None
+        line: Part.Edge = None
+        if self.edgeType(sel.SubObjects[0]) == "circle":
+            circle = sel.SubObjects[0]
+            line = sel.SubObjects[1]
+        elif self.edgeType(sel.SubObjects[1]) == "circle":
+            circle = sel.SubObjects[1]
+            line = sel.SubObjects[0]
+        else:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a circle and a line") # type: ignore
+        
+        if not circle or not line:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a circle and a line") # type: ignore
+
+        if not self.isCircleAndLineCoplanar(circle, line):
+            QtWidgets.QMessageBox.information(None, "Error","The circle and line are not coplanar") # type: ignore
+        measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndLineMeasurement")
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, line, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
     def handleCircleAndCylinderSelection(self, sel):
         doc = FreeCAD.ActiveDocument
@@ -203,30 +245,66 @@ class SelectionPlanner:
             QtWidgets.QMessageBox.information(None, "Error","The boolean fragments could not be created") # type: ignore
             return
         measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndCylinderMeasurement")
         for edge in section_obj.Shape.Edges:
             frag_edge = SubSurfaceCreator.findEdgeOnObject(bool_frag.Shape, edge)
             if frag_edge:
-                SubSurfaceCreator.createNeighborSubsurfaces(bool_frag, frag_edge, aroundVertex=False, measurement_node = measurement_node)
+                SubSurfaceCreator.createNeighborSubsurfaces(bool_frag, frag_edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
             else:
                 print(f"Edge {edge} not found in boolean fragments shape.")
-        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, aroundVertex=False, measurement_node = measurement_node)
-        
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
+
         doc.removeObject(bool_frag.Label)
         doc.removeObject(section_obj.Label)
         doc.recompute()
 
+    def handleEdgeAndPlaneSelection(self, sel):
+        edge: Part.Edge = None
+        plane: Part.Plane = None
+        if self.faceType(sel.SubObjects[0]) == "plane":
+            plane = sel.SubObjects[0]
+            edge = sel.SubObjects[1]
+        elif self.faceType(sel.SubObjects[1]) == "plane":
+            plane = sel.SubObjects[1]
+            edge = sel.SubObjects[0]
+        else:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a line and a plane") # type: ignore
+            return
 
+        if not edge or not plane:
+            QtWidgets.QMessageBox.information(None, "Error","Please select a line and a plane") # type: ignore
+            return
 
+        if not self.isEdgeAndPlaneParallel(edge, plane):
+            QtWidgets.QMessageBox.information(None, "Error","The selected edge and plane are not parallel") # type: ignore
+            return
+        measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeAndPlaneMeasurement")
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
-        
+        points, normals = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group)
+        SubSurfaceCreator.addFaceToMeasurementXML(plane, points, normals, measurement_node)
+        SubSurfaceCreator.createOffsetToFaces(plane, measurement_group=measurement_group)
+
+    def handleSketchSelection(self, sel):
+        sketch = sel
+        if not self.isObjectSketch(sketch):
+            QtWidgets.QMessageBox.information(None, "Error", "The provided object is not a Sketch.") # type: ignore
+
+        # if not sketch.FullyConstrained or not self.isSketchClosed(sketch):
+        if not self.isSketchClosed(sketch):
+            QtWidgets.QMessageBox.information(None, "Info", "Sketch must be fully constrained and closed to create a face.") # type: ignore
+            return
+        measurement_node = self.createMeasurementNode()
+        self.createMeasurementFromSketch(sketch, measurement_node)
 
 
     #endregion
-    
+
     #region Helper functions
 
     def createMeasurementNode(self):
-        measurement_node = ET.SubElement(self.root_node, "Measurement")
+        measurement_node = ET.SubElement(self.measurements_node, "Measurement")
         measurement_node.set("index", str(self.measurement_index))
         self.measurement_index += 1
         return measurement_node
@@ -258,6 +336,31 @@ class SelectionPlanner:
         normal2 = circle2.Curve.Axis.normalize()
         centersVector = circle2.Curve.Center.sub(circle1.Curve.Center)
         return normal1.dot(centersVector) < tol and normal2.dot(centersVector) < tol
+    
+    def isCircleAndLineCoplanar(self, circle, line):
+        tol = 1e-07
+        if self.edgeType(circle) != "circle" or self.edgeType(line) != "line":
+            QtWidgets.QMessageBox.information(None, "Error","Error during coplanarity check: received objects are not circle and line") # type: ignore
+        circle_normal = circle.Curve.Axis.normalize()
+        for v in line.Vertexes:
+            vec_to_circle_center = circle.Curve.Center.sub(v.Point)
+            if abs(circle_normal.dot(vec_to_circle_center)) > tol:
+                return False
+        return True
+
+    def isEdgeAndPlaneParallel(self, edge, plane):
+        if self.edgeType(edge) not in ["line", "circle"] or self.faceType(plane) != "plane":
+            QtWidgets.QMessageBox.information(None, "Error","Error during parallael check: received objects are not line and plane") # type: ignore
+        tol = 1e-07
+        plane_normal = plane.normalAt(0, 0).normalize()
+        if self.edgeType(edge) == "circle":
+            axis = edge.Curve.Axis.normalize()
+            return abs(axis.cross(plane_normal).Length) < tol
+        elif self.edgeType(edge) == "line":
+            line_direction = edge.tangentAt(0.5).normalize()
+            return abs(line_direction.dot(plane_normal)) < tol
+        else:
+            QtWidgets.QMessageBox.information(None, "Error","Error during parallael check: received edge is neither line nor circle") # type: ignore
 
         
     def edgeType(self, subobj):
@@ -312,6 +415,46 @@ class SelectionPlanner:
             for subname in sel.SubElementNames:
                 FreeCADGui.Selection.addSelection(obj, subname)
         self.Panel.dimensions.append(dim)
+
+    def createMeasurementFromSketch(self, sketch, measurement_node):
+        if not self.isObjectSketch(sketch):
+            QtWidgets.QMessageBox.information(None, "Error", "The provided object is not a Sketch.") # type: ignore
+            return
+        
+        face_obj : Part.Face = None
+        measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceFragmentMeasurement")
+        # Check if the sketch is fully constrained and closed
+        # if sketch.FullyConstrained and self.isSketchClosed(sketch):
+        if self.isSketchClosed(sketch):
+            try:
+                face = Part.Face(sketch.Shape)
+                face_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "SketchFace")
+                face_obj.Shape = face
+                FreeCAD.ActiveDocument.recompute()
+            except Exception as e:
+                QtWidgets.QMessageBox.information(None, "Error", f"Could not create face from sketch: {e}") # type: ignore
+        else:
+            QtWidgets.QMessageBox.information(None, "Info", "Sketch must be fully constrained and closed to create a face.") # type: ignore
+            return
+        face = face_obj.Shape.Faces[0]
+        # Create a measurement from the sketch
+        points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
+        SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
+        SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
+        FreeCAD.ActiveDocument.removeObject(face_obj.Name)
+
+    def isObjectSketch(self, obj):
+        """Check if the given object is a Sketcher sketch."""
+        return hasattr(obj, "TypeId") and obj.TypeId.startswith("Sketcher::SketchObject")
+
+    def isSketchClosed(self, sketch):
+        """Check if the sketch is closed by verifying that all edges form a single closed wire."""
+        try:
+            wires = sketch.Shape.Wires
+            return len(wires) == 1 and wires[0].isClosed()
+        except Exception:
+            return False
     
     #DEPRECATED
     def createEdgeExtensionRectangles(self,sel,edge):

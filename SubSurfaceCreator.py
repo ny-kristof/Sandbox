@@ -7,7 +7,7 @@ from BOPTools import BOPFeatures, SplitFeatures
 # from Part import BOPTools
 import xml.etree.ElementTree as ET
 
-def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, aroundVertex = False, measurement_node = None):
+def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, aroundVertex = False, measurement_node = None, measurement_group : App.DocumentObject = None):
 
     doc = App.ActiveDocument
     if doc is None:
@@ -203,7 +203,7 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, around
     print("is edgeOnCommon None: ", edgeOnCommon is None)
     # TODO: refactor this similar to the other solution above
     if edgeOnCommon is not None:
-        face_index = 0
+        # face_index = 0
         for v in edgeOnCommon.Vertexes:
             facesOfVertex = bool_frag.Shape.ancestorsOfType(v, Part.Face)
             print(f"number of faces of vertex {v}: ", len(facesOfVertex))
@@ -216,13 +216,14 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, around
                 if not any(face.isSame(f) for f in elementsToMeasure) and (aroundVertex or any(edgeOnCommon.isSame(e) for e in face.Edges)):
                     elementsToMeasure.append(face)
                     print("class of face: ", type(face.Surface).__name__)
-                    points, normals = sample_surface_by_spacing(face, resolution)
-                    addFaceToMeasurementXML(face, points, normals, measurement_node, face_index)
-                    face_index += 1
+                    points, normals = sample_surface_by_spacing(face, resolution, measurement_group = measurement_group)
+                    addFaceToMeasurementXML(face, points, normals, measurement_node)
+                    # face_index += 1
     print("Number of elements to measure: ", len(elementsToMeasure))
-    createOffsetToFaces(elementsToMeasure)
+    createOffsetToFaces(elementsToMeasure, measurement_group = measurement_group)
     doc.removeObject(bool_frag.Label)
     doc.removeObject(mycommon.Label)
+    doc.removeObject(edgeOnCommon_obj.Label)
     doc.recompute()
 
 def findEdgeOnObject(shape, edge):
@@ -248,10 +249,11 @@ def createBoolFragment(objectlist = []):
 def midpoint(edge):
     return edge.Curve.value((edge.FirstParameter + edge.LastParameter) / 2)
 
-def addFaceToMeasurementXML(face, points, normals, measurement_node, face_index, point_density = 0.1):
+def addFaceToMeasurementXML(face, points, normals, measurement_node, point_density = 0.1):
     if measurement_node is None:
         print("Measurement node is None. Cannot add face to XML.")
         return
+    face_index = len(measurement_node.findall("Face"))
     face_node = ET.SubElement(measurement_node, "Face")
     face_node.set("type", type(face.Surface).__name__)
     face_node.set("index", str(face_index))
@@ -264,7 +266,7 @@ def addFaceToMeasurementXML(face, points, normals, measurement_node, face_index,
         face_node.set("nz", str(round(n.z, 6)))
     addNormalsToFaceXML(points, normals, face_node, planar)
 
-def createOffsetToFaces(faces, color = (1.0, 0.0, 0.0), offset_value = 0.02):
+def createOffsetToFaces(faces, measurement_group : App.DocumentObject = None, color = (1.0, 0.0, 0.0), offset_value = 0.02):
     doc = App.ActiveDocument
     if doc is None:
         print("No active document. Please open a FreeCAD document.")
@@ -282,6 +284,8 @@ def createOffsetToFaces(faces, color = (1.0, 0.0, 0.0), offset_value = 0.02):
     offset.Source = facesToMeasure_obj
     offset.Value = offset_value
     offset.ViewObject.ShapeColor = color
+    if measurement_group is not None:
+        measurement_group.addObject(offset)
     doc.recompute()
 
 
@@ -308,7 +312,7 @@ def addNormalsToFaceXML(points, normals, faceNode, planar=False):
             # else:
             #     ET.SubElement(faceNode, "Sample")  # Empty sample
 
-def sample_surface_by_spacing(face, spacing_mm = 1.0):
+def sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group : App.DocumentObject = None):
     (umin, umax, vmin, vmax) = face.ParameterRange
 
     # Estimate arc lengths in U and V directions (rough approximation)
@@ -351,6 +355,8 @@ def sample_surface_by_spacing(face, spacing_mm = 1.0):
     normal_lines = Part.Compound(lines)
     normals_obj = App.ActiveDocument.addObject("Part::Feature", "NormalLines")
     normals_obj.Shape = normal_lines
+    if measurement_group is not None:
+        measurement_group.addObject(normals_obj)
     App.ActiveDocument.recompute()
 
     return points, normals

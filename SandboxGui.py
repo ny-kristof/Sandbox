@@ -225,3 +225,19 @@ class MakeSectionCommand:
         return True
     
 FreeCADGui.addCommand('Sandbox_MakeSectionCommand', MakeSectionCommand())
+
+class RunCreateSketchCommand:
+    def GetResources(self):
+        return {
+            'Pixmap': __dir__ + '/icons/SketcherWorkbench.svg',
+            'MenuText': 'Run Create Sketch',
+            'ToolTip': 'Runs the Create Sketch command'
+        }
+
+    def Activated(self):
+        FreeCADGui.runCommand('Sketcher_NewSketch')
+
+    def IsActive(self):
+        return True
+
+FreeCADGui.addCommand('Sandbox_RunCreateSketchCommand', RunCreateSketchCommand())
