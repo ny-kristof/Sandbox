@@ -16,9 +16,6 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, around
     if not object or not edge:
         print("No object or edge selected. Please select an object and an edge.")
         return
-    # if not sel or not sel.SubObjects:
-    #     print("No subobject selected. Please select a subobject.")
-    #     return
 
     path_edge = edge
     start_point = path_edge.Vertexes[0].Point
@@ -71,97 +68,8 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, around
         # Create the union of the sweep and the spheres
         bp = BOPFeatures.BOPFeatures(App.activeDocument())
         sweepAndSpheres =  bp.make_multi_fuse(["EndSphere1", "Sweep", "EndSphere2", ])
-        # sweepAndSpheres =  bp.make_multi_fuse(["Sweep", "EndSphere1", "EndSphere2", ])
     else:
         sweepAndSpheres = sweep
-
-    ## A DUPLA KOMMENTES RÉSZ AZ EGÉSZ MÁSIK MÓDSZER AMIT SZÉTTÖRTE AZ OBJEKTUMOT NÉHA
-    # # doc.recompute()
-    # # section = object.Shape.section(sweepAndSpheres.Shape)
-    # # section_obj = doc.addObject("Part::Feature", "Section")
-    # # section_obj.Shape = section
-
-    # # # Remove sweep amd spheres from the document
-    # # doc.removeObject(sweepAndSpheres.Label)
-    # # if aroundVertex and endSphere1 and endSphere2: # type: ignore
-    # #     doc.removeObject(sweep.Label)
-    # #     doc.removeObject(endSphere1.Label) # type: ignore
-    # #     doc.removeObject(endSphere2.Label) # type: ignore
-    # # doc.removeObject(profile.Label)
-    # # doc.removeObject(spine.Label)
-    # # doc.recompute()
-
-    # # #EXPERIMENTAL
-    # # # splitter = BOPTools.Splitter()
-    # # # splitter.addArgument(object)
-    # # # toolsForSplitter = []
-    # # # for sectionEdge in section_obj.Shape.Edges:
-    # # #     toolsForSplitter.append(sectionEdge)
-    # # # if toolsForSplitter:
-    # # #     splitter.addTools(toolsForSplitter)
-    # # # splitter.perform()
-    # # # error = splitter.getError()
-    # # # newShape = None
-    # # # if error:
-    # # #     print("Splitter error: ", error)
-    # # # else:
-    # # #     newShape = splitter.shape()
-    # # #END EXPERIMENTAL
-
-    # # # bp = BOPFeatures.BOPFeatures(App.activeDocument())
-    # # # pleasework = bp.make_multi_fuse(["Section", "25-HU100-001-9001-M", ])
-    # # # pleasework_obj = doc.addObject("Part::Feature", "Pleasework")
-    # # # pleasework_obj.Shape = pleasework
-    # # # doc.recompute()
-
-
-
-
-
-    # # # Create boolean fragments of the object and the section
-    # # bool_frag = SplitFeatures.makeBooleanFragments(name="BooleanFragments13")
-    # # bool_frag.Objects = [object, section_obj]
-    # # bool_frag.Mode = 'CompSolid'
-    # # bool_frag.Proxy.execute(bool_frag)
-
-    # # frag_edge = findEdgeOnObject(bool_frag.Shape, path_edge)
-    # # if frag_edge is None:
-    # #     print("No edge found in boolean fragments that matches the path edge.")
-    # #     return
-    
-    # # print("frag_edge: ", frag_edge.Vertexes[0].Point)
-    # # # return
-
-    # # elements_toMeasure = []
-    # # if aroundVertex:
-    # #     for vertex in frag_edge.Vertexes:
-    # #         vertexfaces = bool_frag.Shape.ancestorsOfType(vertex, Part.Face)
-    # #         for face in vertexfaces:
-    # #             if not any(face.isSame(f) for f in elements_toMeasure):
-    # #                 elements_toMeasure.append(face)
-    # # else:
-    # #     for face in bool_frag.Shape.Faces:
-    # #         if any(frag_edge.isPartner(e) for e in face.Edges):
-    # #             #print("Face found in boolean fragments!")
-    # #             elements_toMeasure.append(face)
-    
-    # # doc.removeObject(bool_frag.Label)
-    # # doc.removeObject(section_obj.Label)
-
-    # # if elements_toMeasure:
-    # #     createOffsetToFaces(elements_toMeasure)
-    # #     for i , face in enumerate(elements_toMeasure):
-    # #         points, normals = sample_surface_by_spacing(face, resolution)
-    # #         addFaceToMeasurementXML(face, points, normals, measurement_node, i)
-    
-    # # doc.recompute()
-    
-
-
-
-
-
-    # return
     
     print("Selection object: ", object.Name)
     print("Sweep object: ", sweepAndSpheres.Label)
@@ -201,26 +109,30 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1, around
     #         break
     elementsToMeasure = []
     print("is edgeOnCommon None: ", edgeOnCommon is None)
-    # TODO: refactor this similar to the other solution above
     if edgeOnCommon is not None:
-        # face_index = 0
-        for v in edgeOnCommon.Vertexes:
-            facesOfVertex = bool_frag.Shape.ancestorsOfType(v, Part.Face)
-            print(f"number of faces of vertex {v}: ", len(facesOfVertex))
-            # if len(facesOfVertex) == 0:
-            #     for face in mycommon.Shape.Faces:
-            #         if face.isInside(v.Point, 1e-07, True):
-            #             facesOfVertex.append(face)
-            # print(f"number of faces of vertex {v} again: {len(facesOfVertex)}")
-            for face in facesOfVertex:
-                if not any(face.isSame(f) for f in elementsToMeasure) and (aroundVertex or any(edgeOnCommon.isSame(e) for e in face.Edges)):
-                    elementsToMeasure.append(face)
-                    print("class of face: ", type(face.Surface).__name__)
-                    points, normals = sample_surface_by_spacing(face, resolution, measurement_group = measurement_group)
+        facesOfVertex = []
+        if aroundVertex:
+            print("Around vertex is True, finding faces of vertexes.")
+            for v in edgeOnCommon.Vertexes:
+                facesOfVertex.extend(bool_frag.Shape.ancestorsOfType(v, Part.Face))
+        else:
+            for face in bool_frag.Shape.Faces:
+                if any(edgeOnCommon.isPartner(e) for e in face.Edges):
+                    facesOfVertex.append(face)
+        if not facesOfVertex:
+            print("No faces found for the edge on common shape. This might be because the edge is not part of the common shape.")
+            return
+        for face in facesOfVertex:
+            if not any(face.isSame(f) for f in elementsToMeasure):
+                elementsToMeasure.append(face)
+                points, normals = sample_surface_by_spacing(face, resolution, measurement_group = measurement_group)
+                if measurement_node is not None:
                     addFaceToMeasurementXML(face, points, normals, measurement_node)
-                    # face_index += 1
+    if not elementsToMeasure:
+        print("No faces found for the edge on common shape. This might be because the edge is not part of the common shape.")
+        return
     print("Number of elements to measure: ", len(elementsToMeasure))
-    createOffsetToFaces(elementsToMeasure, measurement_group = measurement_group)
+    createOffsetToFaces(elementsToMeasure, measurement_group=measurement_group)
     doc.removeObject(bool_frag.Label)
     doc.removeObject(mycommon.Label)
     doc.removeObject(edgeOnCommon_obj.Label)
@@ -333,13 +245,22 @@ def sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group : App.Do
     points = []
     normals = []
     lines = []
-
-    for i in range(u_count):
-        u = umin + (umax - umin) * i / (u_count - 1)
+    #TODO: próbájluk ki, ha megcseréljük a két ciklust.
+    for j in range(v_count):
         row_points = []
         row_normals = []
-        for j in range(v_count):
-            v = vmin + (vmax - vmin) * j / (v_count - 1)
+        v = vmin + (vmax - vmin) * j / (v_count - 1)
+        for i in range(u_count):
+            u = umin + (umax - umin) * i / (u_count - 1)
+
+            if row_points:
+                prev_point = next((p for p in reversed(row_points) if p is not None), None)
+                # prev_point = row_points[-1]
+                if prev_point is not None and (face.valueAt(u, v).sub(prev_point)).Length < spacing_mm:
+                    row_points.append(None)
+                    row_normals.append(None)
+                    continue
+
             point = face.valueAt(u, v)
             if face.isInside(point, 1e-5, True):
                 normal = face.normalAt(u, v)

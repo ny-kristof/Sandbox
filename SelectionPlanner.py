@@ -9,12 +9,6 @@ import xml.etree.ElementTree as ET
 import SubSurfaceCreator
 from BOPTools import SplitFeatures
 
-# import ptvsd
-# print("Waiting for debugger attach")
-# # 5678 is the default attach port in the VS Code debug configurations
-# ptvsd.enable_attach(address=('localhost', 5678), redirect_output=True)
-# ptvsd.wait_for_attach()
-
 class SelectionPlanner:
 
     def __init__(self, TaskPanel):
@@ -32,12 +26,6 @@ class SelectionPlanner:
             sel = FreeCADGui.Selection.getSelectionEx()[0]
             if len(sel.SubObjects) > 3:
                 QtWidgets.QMessageBox.information(None, "Error", f"Please select maximum 3 elements (face, edge or point). {len(sel.SubObjects)} is currently selected") # type: ignore
-            # for sel in selection:
-                # if len(sel.SubObjects) >1:
-                    # QtWidgets.QMessageBox.information(None, "Error", f"Selected element called {sel.SubObjects[0]} has more than 1 element (face, edge or point)")
-                    # print(f"len selection: {len(selection)}")
-                    # print(f"len subobjects of sel: {len(sel.SubObjects)}") 
-                    # return
             
             self.Panel.textbox.clear()
 
@@ -53,6 +41,8 @@ class SelectionPlanner:
                 if(sel.SubObjects[0].ShapeType == "Edge"):
                     #self.createEdgeExtensionRectangles(sel, sel.SubObjects[0])
                     self.handle1EdgeSelection(sel)
+                elif(sel.SubObjects[0].ShapeType == "Face"):
+                    self.handle1FaceSelection(sel)
                 else:
                     QtWidgets.QMessageBox.information(None, "Error","Only edge is allowed with single selection.") # type: ignore
             
@@ -76,14 +66,6 @@ class SelectionPlanner:
                 
             self.Panel.textbox.append("Elements to be measured: \n")
             self.displayFaceVertexInfo(self.elementsToMeasure)
-            # firstSelection = None
-            # for sel in selection:
-                # for subobj in sel.SubObjects:
-                    # if subobj.ShapeType == "Edge":
-                        # if isinstance(curve, Part.Line):
-                        # elif isinstance(curve, Part.Circle):
-                    # elif subobj.ShapeType == "Vertex":
-                    # elif subobj.ShapeType == "Face":
 
     #region Selection handlers
     def handle1EdgeSelection(self, sel):
@@ -109,6 +91,18 @@ class SelectionPlanner:
         # QtWidgets.QMessageBox.information(None, "Hello",f"You selected one edge of length {sel0.SubObjects[0].Length}!")
         self.Panel.textbox.append(f"You selected one edge with length of {sel.SubObjects[0].Length}\n")
 
+    def handle1FaceSelection(self, sel):
+        if not sel.SubObjects[0]:
+            return
+        face = sel.SubObjects[0]
+        self.elementsToMeasure.append(face)
+        measurement_node = self.createMeasurementNode()
+        measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceMeasurement")
+        points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
+        if measurement_node is not None:
+            SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
+        SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
+
     def handle2FaceSelection(self, sel):
         face1 = sel.SubObjects[0]
         face2 = sel.SubObjects[1]
@@ -125,7 +119,8 @@ class SelectionPlanner:
             faces = [face1, face2]
             for i, face in enumerate(faces):
                 points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
-                SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node, i)
+                if measurement_node is not None:
+                    SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node, i)
                 SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         else:
             QtWidgets.QMessageBox.information(None, "Error","Selected faces are not parallel") # type: ignore
@@ -283,7 +278,8 @@ class SelectionPlanner:
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
         points, normals = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group)
-        SubSurfaceCreator.addFaceToMeasurementXML(plane, points, normals, measurement_node)
+        if measurement_node is not None:
+            SubSurfaceCreator.addFaceToMeasurementXML(plane, points, normals, measurement_node)
         SubSurfaceCreator.createOffsetToFaces(plane, measurement_group=measurement_group)
 
     def handleSketchSelection(self, sel):
@@ -422,7 +418,6 @@ class SelectionPlanner:
             return
         
         face_obj : Part.Face = None
-        measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceFragmentMeasurement")
         # Check if the sketch is fully constrained and closed
         # if sketch.FullyConstrained and self.isSketchClosed(sketch):
@@ -440,7 +435,8 @@ class SelectionPlanner:
         face = face_obj.Shape.Faces[0]
         # Create a measurement from the sketch
         points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
-        SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
+        if measurement_node is not None:
+            SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
         SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         FreeCAD.ActiveDocument.removeObject(face_obj.Name)
 
@@ -528,81 +524,5 @@ class SelectionPlanner:
             
             # Recompute the document to reflect changes
             FreeCAD.ActiveDocument.recompute()
-
-            # rectangle = Draft.make_rectangle(
-            #     length=edge_length, 
-            #     height=edge_length / 2, 
-            #     placement=FreeCAD.Placement(
-            #         corner1,#.add(face_normal.normalize().multiply(1/10)), 
-            #         FreeCAD.Rotation(FreeCAD.Vector(1,0,0), edge_vector),
-            #         #FreeCAD.Rotation(face_normal, edge_vector),
-            #         #FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), 0.0), # rotation around the edge
-            #     )
-            # )
-            # FreeCAD.ActiveDocument.recompute()
-            # rectangle.ViewObject.ShapeColor = (1.0, 0.75, 0.8)  # Pink fill
-            # rectangle.ViewObject.LineColor = (1.0, 0.0, 0.0)    # Red outline
-            # rectangle.ViewObject.LineWidth = 2.0                # Line width
-            # sketch = Draft.make_sketch(rectangle, delete=False, name = "MySketch", tol = 1)
-            # FreeCAD.ActiveDocument.recompute()            
-            # return
-
-
-            # sketch = Draft.make_sketch(face)
-
-            # sketch = FreeCAD.ActiveDocument.addObject('Sketcher::SketchObject', 'Sketch')
-            # sketch.Placement = FreeCAD.Placement(corner1, FreeCAD.Rotation(face_normal, 0))
-
-
-            # #sketch_plane = DraftGeomUtils.getPlaneFromFace(face)
-            # face_name = None
-            # for i, f in enumerate(sel.Object.Shape.Faces):
-            #     if f.isSame(face):
-            #         face_name = f"Face{i+1}"
-            #         print(f"Face name: {face_name}")
-            #         break
-            # sketch = FreeCAD.ActiveDocument.addObject('Sketcher::SketchObject', 'RectangleSketch')
-            # sketch.AttachmentSupport = (sel.Object, face_name)
-            # sketch.MapMode = 'FlatFace'
-
-            # # Add the rectangle's corners to the sketch
-            # l1 = sketch.addGeometry(Part.LineSegment(corner1, corner2), False)
-            # # l2 = sketch.addGeometry(Part.LineSegment(corner2, corner3), False)
-            # # l3 = sketch.addGeometry(Part.LineSegment(corner3, corner4), False)
-            # # l4 = sketch.addGeometry(Part.LineSegment(corner4, corner1), False)
-            # return
-
-
-            # Add constraints for closed rectangle
-            # sketch.addConstraint(Sketcher.Constraint('Coincident', l1, 2, l2, 1))
-            # sketch.addConstraint(Sketcher.Constraint('Coincident', l2, 2, l3, 1))
-            # sketch.addConstraint(Sketcher.Constraint('Coincident', l3, 2, l4, 1))
-            # sketch.addConstraint(Sketcher.Constraint('Coincident', l4, 2, l1, 1))
-
-            # # Set the color of the lines to red
-            # for line in [l1, l2, l3, l4]:
-            #     sketch.ViewObject.setElementColors(line, (1.0, 0.0, 0.0))  # RGB for red
-
-            # Recompute the document to update the sketch
-            #FreeCAD.ActiveDocument.recompute()
-            # rectangles.append(rectangle)
-            #print(f"created {len(rectangles)} rectangles")
-
         return rectangles
-    
-    # def createCircleNeighboringFaces(self, sel, edge):
-    #     if isinstance(edge.Curve, Part.Circle):
-    #         # Get the circle's center and radius
-    #         center = edge.Curve.Center
-    #         radius = edge.Curve.Radius
-            
-    #         # Create a circle face
-    #         circle_face = Part.makeCircle(radius, center)
-            
-    #         # Add the circle face to the FreeCAD document
-    #         circle_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "CircleFace")
-    #         circle_obj.Shape = circle_face
-            
-    #         # Set the face's color
-    #         circle_obj.ViewObject.ShapeColor = (0.0, 1.0, 0.0)
     #endregion
