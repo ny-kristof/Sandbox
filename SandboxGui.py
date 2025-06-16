@@ -4,8 +4,9 @@ import FreeCAD as App
 import FreeCADGui
 import os
 import SelObserver
-import TaskPanel
+import SelectDistanceTaskPanel
 import SectionPanel
+import SurfSensePanel
 
 __dir__ = os.path.dirname(__file__)
 observer = None
@@ -153,13 +154,31 @@ class SelectDistanceCommand:
                 'ToolTip': 'Select 2 entities to highlight the features to measure'}
 
     def Activated(self):
-        task_panel = TaskPanel.TaskPanel()
+        task_panel = SelectDistanceTaskPanel.SelectDistanceTaskPanel()
         FreeCADGui.Control.showDialog(task_panel)
 
     def IsActive(self):
         return True
         
 FreeCADGui.addCommand('Sandbox_SelectDistanceCommand', SelectDistanceCommand())
+
+
+class SurfSenseCommand:
+    def GetResources(self):
+        return {'Pixmap': ':/icons/Std_ToggleVisibility.svg',
+                'MenuText': 'SurfSense',
+                'ToolTip': 'General command for Surface scan'}
+
+    def Activated(self):
+        surfsense_panel = SurfSensePanel.SurfSensePanel(__dir__)
+        FreeCADGui.Control.showDialog(surfsense_panel)
+        surfsense_panel.setupUi()
+        surfsense_panel.initConnections()
+
+    def IsActive(self):
+        return True
+        
+FreeCADGui.addCommand('Sandbox_SurfSenseCommand', SurfSenseCommand())
 
 class RestartFreeCADCommand:
     def GetResources(self):

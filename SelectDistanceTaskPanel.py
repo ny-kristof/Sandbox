@@ -6,7 +6,7 @@ import SelectionPlanner
 import CSExporter
 import xml.etree.ElementTree as ET
 
-class TaskPanel:
+class SelectDistanceTaskPanel:
     def __init__(self):
         self.form = QtWidgets.QWidget()
         self.Planner = SelectionPlanner.SelectionPlanner(self)
@@ -79,7 +79,7 @@ class TaskPanel:
     def accept(self):
         CSExporter.add_coordinate_systems_to_xml(self.Planner.root_node)
         tree = ET.ElementTree(self.Planner.root_node)
-        tree.write("C:\\Users\\nyomarkay.kristof\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
+        tree.write("C:\\Users\\KaszaZsolt\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
         for dim in self.dimensions:
             FreeCAD.ActiveDocument.removeObject(dim.Name)
         return True

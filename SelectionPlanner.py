@@ -48,19 +48,19 @@ class SelectionPlanner:
             
             elif len(sel.SubObjects) == 2:
                 if(sel.SubObjects[0].ShapeType == "Face" and sel.SubObjects[1].ShapeType == "Face"):
-                    self.handle2FaceSelection(sel)
+                     return self.handle2FaceSelection(sel)
                 elif self.edgeType(sel.SubObjects[0]) == "line" and self.edgeType(sel.SubObjects[1]) == "line":
-                    self.handle2EdgeSelection(sel)
+                    return self.handle2EdgeSelection(sel)
                 elif self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "circle":
-                    self.handle2CircleSelection(sel)
+                    return self.handle2CircleSelection(sel)
                 elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.faceType(sel.SubObjects[1]) == "cylinder") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.faceType(sel.SubObjects[0]) == "cylinder"):
-                    self.handleCircleAndCylinderSelection(sel)
+                    return self.handleCircleAndCylinderSelection(sel)
                 elif (
                     (self.edgeType(sel.SubObjects[0]) in ["line", "circle"] and self.faceType(sel.SubObjects[1]) == "plane") or
                     (self.edgeType(sel.SubObjects[1]) in ["line", "circle"] and self.faceType(sel.SubObjects[0]) == "plane")):
-                    self.handleEdgeAndPlaneSelection(sel)
+                    return self.handleEdgeAndPlaneSelection(sel)
                 elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "line") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.edgeType(sel.SubObjects[0]) == "line"):
-                    self.handleCircleAndLineSelection(sel)
+                    return self.handleCircleAndLineSelection(sel)
                 else:
                     QtWidgets.QMessageBox.information(None, "Error","Invalid selection pair.") # type: ignore
                 
@@ -90,6 +90,7 @@ class SelectionPlanner:
                         FreeCADGui.Selection.addSelection(sel.Object, f"Face{i+1}")
         # QtWidgets.QMessageBox.information(None, "Hello",f"You selected one edge of length {sel0.SubObjects[0].Length}!")
         self.Panel.textbox.append(f"You selected one edge with length of {sel.SubObjects[0].Length}\n")
+        return sel.SubObjects[0].Length
 
     def handle1FaceSelection(self, sel):
         if not sel.SubObjects[0]:
@@ -124,8 +125,9 @@ class SelectionPlanner:
                 SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         else:
             QtWidgets.QMessageBox.information(None, "Error","Selected faces are not parallel") # type: ignore
-            return
+            return "Non parallel"
         self.makeDim(face1,face2)
+        return "Parallel"
 
     def handle2EdgeSelection(self, sel):
         if self.notParallelAndNotSkew(sel.SubObjects[0], sel.SubObjects[1]):
@@ -154,6 +156,7 @@ class SelectionPlanner:
                 if not contToNextLine and not any(face.isSame(f) for f in self.elementsToMeasure):
                     self.elementsToMeasure.append(face)
                     FreeCADGui.Selection.addSelection(sel.Object, f"Face{i+1}")
+        return distance
 
     def handle2CircleSelection(self, sel):
         circle1 = sel.SubObjects[0]

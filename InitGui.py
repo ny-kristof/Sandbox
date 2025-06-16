@@ -41,7 +41,7 @@ class SandboxWorkbench (Workbench): #type: ignore
         import SandboxGui
         # list of commands, only one (it is in the imported SandboxGui):
         # cmdlist = [ "Sandbox_MakeBox", "Sandbox_AddObserver", "Sandbox_RemoveObserver", "Sandbox_AddClippingPlaneToFaceCommand", "Sandbox_SelectDistanceCommand"]
-        cmdlist = ["Sandbox_SelectDistanceCommand", "Sandbox_RestartFreeCADCommand", "Sandbox_MakeSectionCommand", "Sandbox_RunCreateSketchCommand"]
+        cmdlist = ["Sandbox_SelectDistanceCommand", "Sandbox_RestartFreeCADCommand", "Sandbox_MakeSectionCommand", "Sandbox_RunCreateSketchCommand", "Sandbox_SurfSenseCommand"]
         self.appendToolbar(
             str(QtCore.QT_TRANSLATE_NOOP("Sandbox", "Sandbox")), cmdlist)
         self.appendMenu(
