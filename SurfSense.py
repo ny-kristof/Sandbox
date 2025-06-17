@@ -17,6 +17,7 @@ class SurfSense:
     def getMeasurements(self):
         return self.list_of_measurements
     
+    
     def addMeasurementToList(self, measurement):
         self.list_of_measurements.append(measurement)
 

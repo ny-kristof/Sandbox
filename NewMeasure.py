@@ -11,18 +11,20 @@ class NewMeasure:
         path =  os.path.join(self.loc, "UI\\NewMeasure.ui")
         self.form = Gui.PySideUic.loadUi(path)
         self.list_view = self.form.MeasurementsList
-        #self.model = QtGui.QStandardItemModel()
-        #self.list_view.setModel(self.model)
-        
+
         self.form.MeasureCancelBtn.clicked.connect(lambda: self.parent.closeMeasureWidget(self.form))
         self.form.MeasureBtn.clicked.connect(self.runMeasurement)
         self.form.MeasureDetailsWidget.hide()
+        self.form.ConrolButtons.hide()
         self.form.unitLineEdit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.unitLineEdit.text()))
         self.form.FormalityComboBox.currentIndexChanged.connect(lambda: self.handleMeasureTypeChange())
-
-        
+    
 
     def setupFormalityComboBox(self):
+        combo_box = self.form.FormalityComboBox
+        if combo_box.count() != 0:
+            return
+        
         import json
         json_path = os.path.join(self.loc, "Data\\measurements.json")
         if not os.path.exists(json_path):
@@ -42,7 +44,6 @@ class NewMeasure:
             return
 
         
-        combo_box = self.form.FormalityComboBox
         for entry in measurements:
             name = entry.get('name', 'Unknown')
             icon_path = entry.get('icon', '')
@@ -60,8 +61,6 @@ class NewMeasure:
             combo_box.setItemData(index, {'type': item_type, 'unit': unit, 'name': name})
         
         
-
-
     def handleMeasurementHistory(self, measurement_widget):
         measurements = self.parent.surf_sense.getMeasurements()
         if len(measurements) == 0:
@@ -92,7 +91,7 @@ class NewMeasure:
 
         if combo_box.currentIndex() != -1:
             self.form.MeasureDetailsWidget.show()
-
+            self.form.ConrolButtons.show()
 
 
     def runMeasurement(self):
@@ -114,10 +113,6 @@ class NewMeasure:
     def addMeasurementToHistory(self):
         measurements = self.parent.surf_sense.getMeasurements()
         
-        # list_view = measure_widget.MeasurementsList
-        # model = QtGui.QStandardItemModel()
-        # list_view.setModel(model)
-        #self.selObserver.addSelectedItemToSelection()
         model1 = QtGui.QStandardItemModel()
         model2 = QtGui.QStandardItemModel()
         for i, obj in enumerate(measurements):
@@ -129,7 +124,3 @@ class NewMeasure:
             
         self.list_view.setModel(model1)
         self.parent.list_view.setModel(model2)
-        # for i, obj in enumerate(measurements):
-        #     to_show = f"Mérés-{(i + 1)}: {obj.measure_type} | {obj.measure} {obj.unit}"
-        #     item = QtGui.QStandardItem(to_show)
-        #     self.model.appendRow(item)
