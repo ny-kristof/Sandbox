@@ -1,0 +1,71 @@
+{
+    "sensors": 
+    [
+        {
+            "type": "HPO 45",
+            "manufacturer": "Hejens",
+            "cannot_measure": ["e.g. Tilt angle"],
+            "FOV": {
+                "x": 25,
+                "y": 100,
+                "z": 50,
+                "D": 50,
+                "NFOV X": 50,
+                "NFOV Y": 95,
+                "FFOV X": 90,
+                "FFOV Y": 200,
+                "CD": 60,
+                "MR": 50
+            },
+            "resolution x": 0,
+            "resolution y": 0,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "CDF05",
+            "manufacturer": "Longex",
+            "cannot_measure": [],
+            "FOV": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "D": 0,
+                "NFOV X": 0,
+                "NFOV Y": 0,
+                "FFOV X": 0,
+                "FFOV Y": 0,
+                "CD": 0,
+                "MR": 0
+            },
+            "resolution x": 0,
+            "resolution y": 0,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "CUF007",
+            "manufacturer": "Longex",
+            "cannot_measure": [],
+            "FOV": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "D": 0,
+                "NFOV X": 0,
+                "NFOV Y": 0,
+                "FFOV X": 0,
+                "FFOV Y": 0,
+                "CD": 0,
+                "MR": 0
+            },
+            "resolution x": 0,
+            "resolution y": 0,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        }
+    ]
+}

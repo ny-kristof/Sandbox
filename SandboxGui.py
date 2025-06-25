@@ -1,5 +1,4 @@
-import PySide6
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide import QtCore, QtGui, QtWidgets
 import FreeCAD as App
 import FreeCADGui
 import os
@@ -167,13 +166,21 @@ class SurfSenseCommand:
     def GetResources(self):
         return {'Pixmap': ':/icons/Std_ToggleVisibility.svg',
                 'MenuText': 'SurfSense',
-                'ToolTip': 'General command for Surface scan'}
+                'ToolTip': 'General command for Surface scan',
+                "Checkable": True}
 
-    def Activated(self):
-        surfsense_panel = SurfSensePanel.SurfSensePanel(__dir__)
-        FreeCADGui.Control.showDialog(surfsense_panel)
-        surfsense_panel.setupUi()
-        surfsense_panel.initConnections()
+
+    def Activated(self, status = 0):
+        mw = FreeCADGui.getMainWindow()
+        surf_sense_panel = mw.findChild(QtGui.QDockWidget, "SurfSensePanel")
+        if status == 0:
+            if surf_sense_panel:
+                surf_sense_panel.hide()
+        else:
+            if surf_sense_panel:
+                surf_sense_panel.show()
+                surf_sense_panel.raise_()
+
 
     def IsActive(self):
         return True

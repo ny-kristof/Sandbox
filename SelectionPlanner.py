@@ -7,6 +7,7 @@ import DraftGeomUtils # type: ignore
 import Sketcher
 import xml.etree.ElementTree as ET
 import SubSurfaceCreator
+import SurfSensePanel
 from BOPTools import SplitFeatures
 
 class SelectionPlanner:
@@ -98,7 +99,10 @@ class SelectionPlanner:
         face = sel.SubObjects[0]
         self.elementsToMeasure.append(face)
         measurement_node = self.createMeasurementNode()
+        # measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", f"FaceMeasurement-{str(SurfSensePanel.SurfSensePanel._measurement_count)}")
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID")
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
         if measurement_node is not None:
             SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
@@ -305,6 +309,7 @@ class SelectionPlanner:
     def createMeasurementNode(self):
         measurement_node = ET.SubElement(self.measurements_node, "Measurement")
         measurement_node.set("index", str(self.measurement_index))
+        measurement_node.set("SurfSenseID", str(SurfSensePanel.SurfSensePanel._measurement_count))
         self.measurement_index += 1
         return measurement_node
 
