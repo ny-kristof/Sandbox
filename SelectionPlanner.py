@@ -8,6 +8,7 @@ import Sketcher
 import xml.etree.ElementTree as ET
 import SubSurfaceCreator
 from BOPTools import SplitFeatures
+import time
 
 class SelectionPlanner:
 
@@ -67,6 +68,33 @@ class SelectionPlanner:
             self.Panel.textbox.append("Elements to be measured: \n")
             self.displayFaceVertexInfo(self.elementsToMeasure)
 
+    def sampleEveryFaceOnObject(self, obj, xml_node=None):
+        # TODO: make measurement_node a real parameter, currently it is always set to self.root_node
+        print("Starting ampling every face on object")
+        start_time = time.time()
+        xml_node = self.root_node
+        print(f"Object name : {obj.Name if obj else 'None'}")
+        print(f"Object face count: {len(obj.Shape.Faces) if obj and hasattr(obj, 'Shape') else 'N/A'}")
+        """
+        Samples every face on the given object and adds it under the root node.
+        """
+        object_node = ET.SubElement(xml_node, "ObjectToMeasure")
+        #object_node = None
+
+        if not obj or not hasattr(obj, "Shape") or not obj.Shape:
+            QtWidgets.QMessageBox.information(None, "Error","Invalid object for sampling faces.") # type: ignore
+            return
+
+        # can not make this parallel, because the normals are calculated using the face, and normalAt is not thread-safe
+        for face in obj.Shape.Faces:
+            result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm=4.0, measurement_group=None, detailOutline=False, displayNormals=False)
+            if object_node is not None:
+                SubSurfaceCreator.addFaceToMeasurementXML(face, result, object_node, addGeometry=False)
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Sampling completed in {elapsed_time:.2f} seconds.")
+
     #region Selection handlers
     def handle1EdgeSelection(self, sel):
         if not sel.SubObjects[0]:
@@ -98,9 +126,9 @@ class SelectionPlanner:
         self.elementsToMeasure.append(face)
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceMeasurement")
-        points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
+        result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group, detailOutline=True)
         if measurement_node is not None:
-            SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
+            SubSurfaceCreator.addFaceToMeasurementXML(face, result, measurement_node)
         SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
 
     def handle2FaceSelection(self, sel):
@@ -118,9 +146,9 @@ class SelectionPlanner:
             measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceDistanceMeasurement")
             faces = [face1, face2]
             for i, face in enumerate(faces):
-                points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
+                result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
                 if measurement_node is not None:
-                    SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node, i)
+                    SubSurfaceCreator.addFaceToMeasurementXML(face, result, measurement_node)
                 SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         else:
             QtWidgets.QMessageBox.information(None, "Error","Selected faces are not parallel") # type: ignore
@@ -275,11 +303,11 @@ class SelectionPlanner:
             return
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeAndPlaneMeasurement")
-        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
+        SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, radius=(22.5-15.0), aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
-        points, normals = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group)
+        result = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group, detailOutline=True)
         if measurement_node is not None:
-            SubSurfaceCreator.addFaceToMeasurementXML(plane, points, normals, measurement_node)
+            SubSurfaceCreator.addFaceToMeasurementXML(plane, result, measurement_node)
         SubSurfaceCreator.createOffsetToFaces(plane, measurement_group=measurement_group)
 
     def handleSketchSelection(self, sel):
@@ -434,9 +462,9 @@ class SelectionPlanner:
             return
         face = face_obj.Shape.Faces[0]
         # Create a measurement from the sketch
-        points, normals = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
+        result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
         if measurement_node is not None:
-            SubSurfaceCreator.addFaceToMeasurementXML(face, points, normals, measurement_node)
+            SubSurfaceCreator.addFaceToMeasurementXML(face, result, measurement_node)
         SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         FreeCAD.ActiveDocument.removeObject(face_obj.Name)
 

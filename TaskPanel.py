@@ -64,6 +64,26 @@ class TaskPanel:
         row_layout5.addWidget(button5)
         layout.addLayout(row_layout5)
 
+        # Button and Label for extracting all faces to XML
+        row_layout6 = QtWidgets.QHBoxLayout()
+        label6 = QtWidgets.QLabel("Export whole Part to XML: ")
+        button6 = QtWidgets.QPushButton("Export")
+        button6.clicked.connect(lambda: self.Planner.sampleEveryFaceOnObject(FreeCADGui.Selection.getSelection()[0]))
+        row_layout6.addWidget(label6)
+        row_layout6.addStretch()
+        row_layout6.addWidget(button6)
+        layout.addLayout(row_layout6)
+
+        #Button and Label for exporting selected coordinate systems to XML
+        row_layout7 = QtWidgets.QHBoxLayout()
+        label7 = QtWidgets.QLabel("Export selected coordinate systems to XML: ")
+        button7 = QtWidgets.QPushButton("Export")
+        button7.clicked.connect(lambda: CSExporter.add_selected_LCS_to_xml(self.Planner.root_node))
+        row_layout7.addWidget(label7)
+        row_layout7.addStretch()
+        row_layout7.addWidget(button7)
+        layout.addLayout(row_layout7)
+
         #Textbox do display information
         self.textbox = QtWidgets.QTextEdit()
         self.textbox.setReadOnly(True)
@@ -77,7 +97,7 @@ class TaskPanel:
     
 
     def accept(self):
-        CSExporter.add_coordinate_systems_to_xml(self.Planner.root_node)
+        # CSExporter.add_coordinate_systems_to_xml(self.Planner.root_node)
         tree = ET.ElementTree(self.Planner.root_node)
         tree.write("C:\\Users\\nyomarkay.kristof\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
         for dim in self.dimensions:
