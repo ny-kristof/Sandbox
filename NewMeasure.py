@@ -3,8 +3,10 @@ import FreeCADGui as Gui
 import FreeCAD as App
 from PySide import QtGui, QtCore, QtWidgets
 from SurfSense import MeasurementData
+import CSExporter
 
 class NewMeasure:
+    #TODO separate connections and ui setup
     def __init__(self, parent, loc):
         self.parent = parent
         self.loc = loc
@@ -28,7 +30,21 @@ class NewMeasure:
         self.form.textbox.hide()
         plus_less_icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_less.svg")).pixmap(QtCore.QSize(20,20))
         self.form.PlusLessLabel.setPixmap(plus_less_icon)
+        info_icon = QtGui.QIcon(os.path.join(self.loc, "icons\\info.svg")).pixmap(QtCore.QSize(20,20))
+        self.form.InfoLabel1.setPixmap(info_icon)
+        self.form.InfoLabel2.setPixmap(info_icon)
+        self.form.InfoLabel1.setToolTip("tooltip here...")
+        self.form.InfoLabel2.setToolTip("tooltip here...")
+        self.form.ExportWholePartBtn.clicked.connect(self.handleWholePartBtnClick)
+        self.form.ExportCoordinateSystemBtn.clicked.connect(lambda: CSExporter.add_selected_LCS_to_xml(self.parent.selection_planner.root_node))
 
+
+    def handleWholePartBtnClick(self):
+        sel = Gui.Selection.getSelection()
+        if(len(sel) < 1):
+            App.Console.PrintWarning("Selection is empty")
+            return
+        self.parent.selection_planner.sampleEveryFaceOnObject(sel[0])
 
     def showMeasurementExtraSettings(self, checked):
         if checked == True:
