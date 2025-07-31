@@ -255,15 +255,16 @@ class SurfSensePanel(QtWidgets.QWidget):
 
 
     def saveMeasurementsToXML(self):
+        from pathlib import Path       
         try:
-            CSExporter.add_coordinate_systems_to_xml(self.selection_planner.root_node)
+            documents_dir = Path.home() / "Documents" / "SurfSense"
+            documents_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+
+            file_path = documents_dir / "measurements.xml"
             tree = ET.ElementTree(self.selection_planner.root_node)
-            #App.Console.PrinteMessage(f"tree: {tree}")
-            tree.write("C:\\Users\\KaszaZsolt\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
-            # for dim in self.dimensions:
-            #     App.ActiveDocument.removeObject(dim.Name)
+            tree.write(file_path, encoding="utf-8", xml_declaration=True)
             App.Console.PrintMessage("File saved succesfully")
-        except:
+        except Exception as e:
             App.Console.PrintError("Failed to save the measurements")
 
 
