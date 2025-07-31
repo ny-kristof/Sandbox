@@ -97,9 +97,13 @@ class SelectDistanceTaskPanel:
     
 
     def accept(self):
-        # CSExporter.add_coordinate_systems_to_xml(self.Planner.root_node)
+        from pathlib import Path
+        documents_dir = Path.home() / "Documents" / "SurfSense"
+        documents_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+
+        file_path = documents_dir / "measurements.xml"
         tree = ET.ElementTree(self.Planner.root_node)
-        tree.write("C:\\Users\\KaszaZsolt\\Documents\\SurfSense\\measurements.xml", encoding="utf-8", xml_declaration=True)
+        tree.write(file_path, encoding="utf-8", xml_declaration=True)
         for dim in self.dimensions:
             FreeCAD.ActiveDocument.removeObject(dim.Name)
         return True
