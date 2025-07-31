@@ -1,0 +1,71 @@
+{
+    "measurement_types": 
+    [
+        {
+            "name": "Size/Distance",
+            "type": "size",
+            "icon": "../icons/measurements/length_distance.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Diameter",
+            "type": "size",
+            "icon": "../icons/measurements/diameter.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Radius",
+            "type": "size",
+            "icon": "../icons/measurements/radius.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Surface Roughness",
+            "type": "size",
+            "icon": "../icons/measurements/surface_roughness.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Flatness",
+            "type": "tolerance",
+            "icon": "../icons/measurements/flatness.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Circularity",
+            "type": "tolerance",
+            "icon": "../icons/measurements/circularity.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Cylindricity",
+            "type": "tolerance",
+            "icon": "../icons/measurements/cylindricity.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Parallelism",
+            "type": "tolerance",
+            "icon": "../icons/measurements/parallelism.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Perpendicularity",
+            "type": "tolerance",
+            "icon": "../icons/measurements/perpendicularity.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Angularity",
+            "type": "tolerance",
+            "icon": "../icons/measurements/tilt_angle.svg",
+            "unit": "mm"
+        },
+        {
+            "name": "Position",
+            "type": "tolerance",
+            "icon": "../icons/measurements/position.svg",
+            "unit": "mm"
+        }
+    ]
+}

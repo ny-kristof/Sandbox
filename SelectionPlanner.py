@@ -7,6 +7,7 @@ import DraftGeomUtils # type: ignore
 import Sketcher
 import xml.etree.ElementTree as ET
 import SubSurfaceCreator
+import SurfSensePanel
 from BOPTools import SplitFeatures
 import time
 
@@ -49,19 +50,19 @@ class SelectionPlanner:
             
             elif len(sel.SubObjects) == 2:
                 if(sel.SubObjects[0].ShapeType == "Face" and sel.SubObjects[1].ShapeType == "Face"):
-                    self.handle2FaceSelection(sel)
+                     return self.handle2FaceSelection(sel)
                 elif self.edgeType(sel.SubObjects[0]) == "line" and self.edgeType(sel.SubObjects[1]) == "line":
-                    self.handle2EdgeSelection(sel)
+                    return self.handle2EdgeSelection(sel)
                 elif self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "circle":
-                    self.handle2CircleSelection(sel)
+                    return self.handle2CircleSelection(sel)
                 elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.faceType(sel.SubObjects[1]) == "cylinder") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.faceType(sel.SubObjects[0]) == "cylinder"):
-                    self.handleCircleAndCylinderSelection(sel)
+                    return self.handleCircleAndCylinderSelection(sel)
                 elif (
                     (self.edgeType(sel.SubObjects[0]) in ["line", "circle"] and self.faceType(sel.SubObjects[1]) == "plane") or
                     (self.edgeType(sel.SubObjects[1]) in ["line", "circle"] and self.faceType(sel.SubObjects[0]) == "plane")):
-                    self.handleEdgeAndPlaneSelection(sel)
+                    return self.handleEdgeAndPlaneSelection(sel)
                 elif (self.edgeType(sel.SubObjects[0]) == "circle" and self.edgeType(sel.SubObjects[1]) == "line") or (self.edgeType(sel.SubObjects[1]) == "circle" and self.edgeType(sel.SubObjects[0]) == "line"):
-                    self.handleCircleAndLineSelection(sel)
+                    return self.handleCircleAndLineSelection(sel)
                 else:
                     QtWidgets.QMessageBox.information(None, "Error","Invalid selection pair.") # type: ignore
                 
@@ -118,6 +119,7 @@ class SelectionPlanner:
                         FreeCADGui.Selection.addSelection(sel.Object, f"Face{i+1}")
         # QtWidgets.QMessageBox.information(None, "Hello",f"You selected one edge of length {sel0.SubObjects[0].Length}!")
         self.Panel.textbox.append(f"You selected one edge with length of {sel.SubObjects[0].Length}\n")
+        return sel.SubObjects[0].Length
 
     def handle1FaceSelection(self, sel):
         if not sel.SubObjects[0]:
@@ -125,7 +127,10 @@ class SelectionPlanner:
         face = sel.SubObjects[0]
         self.elementsToMeasure.append(face)
         measurement_node = self.createMeasurementNode()
+        # measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", f"FaceMeasurement-{str(SurfSensePanel.SurfSensePanel._measurement_count)}")
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group, detailOutline=True)
         if measurement_node is not None:
             SubSurfaceCreator.addFaceToMeasurementXML(face, result, measurement_node)
@@ -144,6 +149,7 @@ class SelectionPlanner:
             self.Panel.textbox.append(f"You selected two parallel faces with distance of {distance}\n")
             measurement_node = self.createMeasurementNode()
             measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceDistanceMeasurement")
+            measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
             faces = [face1, face2]
             for i, face in enumerate(faces):
                 result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
@@ -152,8 +158,9 @@ class SelectionPlanner:
                 SubSurfaceCreator.createOffsetToFaces(face, measurement_group = measurement_group)
         else:
             QtWidgets.QMessageBox.information(None, "Error","Selected faces are not parallel") # type: ignore
-            return
+            return "Non parallel"
         self.makeDim(face1,face2)
+        return "Parallel"
 
     def handle2EdgeSelection(self, sel):
         if self.notParallelAndNotSkew(sel.SubObjects[0], sel.SubObjects[1]):
@@ -169,6 +176,7 @@ class SelectionPlanner:
         # FreeCADGui.runCommand('Std_Measure',0)
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeDistanceMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         for i, edge in enumerate(sel.SubObjects):
             SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -182,6 +190,7 @@ class SelectionPlanner:
                 if not contToNextLine and not any(face.isSame(f) for f in self.elementsToMeasure):
                     self.elementsToMeasure.append(face)
                     FreeCADGui.Selection.addSelection(sel.Object, f"Face{i+1}")
+        return distance
 
     def handle2CircleSelection(self, sel):
         circle1 = sel.SubObjects[0]
@@ -192,6 +201,7 @@ class SelectionPlanner:
         
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleDistanceMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         for i, circle in enumerate(sel.SubObjects):
             SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -214,6 +224,7 @@ class SelectionPlanner:
             QtWidgets.QMessageBox.information(None, "Error","The circle and line are not coplanar") # type: ignore
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndLineMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, line, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -269,6 +280,7 @@ class SelectionPlanner:
             return
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndCylinderMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         for edge in section_obj.Shape.Edges:
             frag_edge = SubSurfaceCreator.findEdgeOnObject(bool_frag.Shape, edge)
             if frag_edge:
@@ -303,6 +315,7 @@ class SelectionPlanner:
             return
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeAndPlaneMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, radius=(22.5-15.0), aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
         result = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group, detailOutline=True)
@@ -330,6 +343,7 @@ class SelectionPlanner:
     def createMeasurementNode(self):
         measurement_node = ET.SubElement(self.measurements_node, "Measurement")
         measurement_node.set("index", str(self.measurement_index))
+        measurement_node.set("SurfSenseID", str(SurfSensePanel.SurfSensePanel._measurement_count))
         self.measurement_index += 1
         return measurement_node
 
@@ -447,6 +461,7 @@ class SelectionPlanner:
         
         face_obj : Part.Face = None
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceFragmentMeasurement")
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
         # Check if the sketch is fully constrained and closed
         # if sketch.FullyConstrained and self.isSketchClosed(sketch):
         if self.isSketchClosed(sketch):

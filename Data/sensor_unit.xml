@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<UnitForData>
+    <Resolution_XY_NEAR>µm</Resolution_XY_NEAR>
+    <Resolution_XY_FAR>µm</Resolution_XY_FAR>
+    <Field_of_View_NEAR>mm</Field_of_View_NEAR>
+    <Field_of_View_FAR>mm</Field_of_View_FAR>
+    <Clearance_Distance>mm</Clearance_Distance>
+    <Measurement_Range_Z>mm</Measurement_Range_Z>
+    <Repeatability_Z_NEAR>µm</Repeatability_Z_NEAR>
+    <Repeatability_Z_FAR>µm</Repeatability_Z_FAR>
+    <Resolution_Z_NEAR>µm</Resolution_Z_NEAR>
+    <Resolution_Z_FAR>µm</Resolution_Z_FAR>
+    <Sampling_from>Hz</Sampling_from>
+    <Sampling_up_to>Hz</Sampling_up_to>
+    <Max_perm_accceleration>G</Max_perm_accceleration>
+</UnitForData>

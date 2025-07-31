@@ -36,16 +36,50 @@ class SandboxWorkbench (Workbench): #type: ignore
 
     def Initialize(self) :
         "This function is executed when FreeCAD starts"
-        from PySide6 import QtCore, QtGui
+        from PySide import QtCore, QtGui
+        import FreeCAD as App
+        import os
+        import SurfSensePanel
         # python file where the commands are:
         import SandboxGui
         # list of commands, only one (it is in the imported SandboxGui):
         # cmdlist = [ "Sandbox_MakeBox", "Sandbox_AddObserver", "Sandbox_RemoveObserver", "Sandbox_AddClippingPlaneToFaceCommand", "Sandbox_SelectDistanceCommand"]
-        cmdlist = ["Sandbox_SelectDistanceCommand", "Sandbox_RestartFreeCADCommand", "Sandbox_MakeSectionCommand", "Sandbox_RunCreateSketchCommand"]
+        cmdlist = ["Sandbox_SelectDistanceCommand", "Sandbox_RestartFreeCADCommand", "Sandbox_MakeSectionCommand", "Sandbox_RunCreateSketchCommand", "Sandbox_SurfSenseCommand"]
         self.appendToolbar(
             str(QtCore.QT_TRANSLATE_NOOP("Sandbox", "Sandbox")), cmdlist)
         self.appendMenu(
             str(QtCore.QT_TRANSLATE_NOOP("Sandbox", "Sandbox")), cmdlist)
+
+        vm = QtGui.QDockWidget()
+        
+        path = os.path.join(os.getenv('APPDATA'), "FreeCAD\\Mod\\Sandbox")
+        # TODO check theme and connect to themechanges to handle ui appearance FreeCAD.ParamGet("User parameter:BaseApp/Preferences/MainWindow").GetString('Theme')
+        surfsense_panel = SurfSensePanel.SurfSensePanel(path)
+        vm.setWidget(surfsense_panel.form)
+
+        surfsense_panel.setupUi()
+        surfsense_panel.initConnections()
+
+        vm.setObjectName("SurfSensePanel")
+        vm.setWindowTitle("SurfSense")
+        mw = Gui.getMainWindow()
+        # vm.setFloating(True)
+        # vm.setGeometry(vm.x(), vm.y(), 200, 300)
+        mw.addDockWidget(QtCore.Qt.LeftDockWidgetArea, vm)
+        tabs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/BIM").GetString("BimViewTabs", "")
+        # App.Console.PrintMessage(f"found: {App.ParamGet('User parameter:BaseApp/Preferences').GetGroups()} \n")
+        # App.Console.PrintMessage(f"found: {App.ParamGet('User parameter:BaseApp/Preferences/MainWindow').IsEmpty()} \n")
+        if tabs:
+            tabs = tabs.split("+")
+            for tab in tabs:
+                dw = mw.findChild(QtGui.QDockWidget, tab)
+                
+                if dw:
+                    mw.tabifyDockWidget(dw, vm)
+                    break
+        
+        vm.show()
+        vm.raise_()
 
         Log ('Loading Sandbox module... done\n') # type: ignore
 

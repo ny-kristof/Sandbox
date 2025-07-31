@@ -1,0 +1,159 @@
+{
+    "sensors": 
+    [
+        {
+            "type": "HPO 45",
+            "manufacturer": "Hejens",
+            "cannot_measure": ["Tilt angle"],
+            "FOV": {
+                "x": 25,
+                "y": 100,
+                "z": 50,
+                "D": 50,
+                "NFOV X": 50,
+                "NFOV Y": 95,
+                "FFOV X": 90,
+                "FFOV Y": 200,
+                "CD": 60,
+                "MR": 50
+            },
+            "resolution x": 0,
+            "resolution y": 0,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "PRO 360",
+            "manufacturer": "Hejens",
+            "cannot_measure": ["Tilt angle", "Perpendicularity"],
+            "FOV": {
+                "x": 25,
+                "y": 100,
+                "z": 50,
+                "D": 50,
+                "NFOV X": 50,
+                "NFOV Y": 95,
+                "FFOV X": 90,
+                "FFOV Y": 200,
+                "CD": 60,
+                "MR": 50
+            },
+            "resolution x": 0,
+            "resolution y": 0,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "CDF05",
+            "manufacturer": "Longex",
+            "cannot_measure": [],
+            "FOV": {
+                "x": 1,
+                "y": 2,
+                "z": 3,
+                "D": 4,
+                "NFOV X": 5,
+                "NFOV Y": 6,
+                "FFOV X": 7,
+                "FFOV Y": 8,
+                "CD": 9,
+                "MR": 10
+            },
+            "resolution x": 1024,
+            "resolution y": 768,
+            "dimension a/x": 100,
+            "dimension b/y": 200,
+            "dimension c/z": 300
+        },
+        {
+            "type": "CUF007",
+            "manufacturer": "Longex",
+            "cannot_measure": [],
+            "FOV": {
+                "x": 10,
+                "y": 9,
+                "z": 8,
+                "D": 7,
+                "NFOV X": 6,
+                "NFOV Y": 5,
+                "FFOV X": 4,
+                "FFOV Y": 3,
+                "CD": 2,
+                "MR": 1
+            },
+            "resolution x": 800,
+            "resolution y": 600,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "CDF04",
+            "manufacturer": "Longex",
+            "cannot_measure": ["Radius", "Diameter"],
+            "FOV": {
+                "x": 11,
+                "y": 12,
+                "z": 13,
+                "D": 14,
+                "NFOV X": 15,
+                "NFOV Y": 16,
+                "FFOV X": 17,
+                "FFOV Y": 18,
+                "CD": 20,
+                "MR": 21
+            },
+            "resolution x": 720,
+            "resolution y": 480,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "TZR 780",
+            "manufacturer": "Zeus",
+            "cannot_measure": ["Radius", "Diameter"],
+            "FOV": {
+                "x": 21,
+                "y": 22,
+                "z": 23,
+                "D": 24,
+                "NFOV X": 25,
+                "NFOV Y": 26,
+                "FFOV X": 27,
+                "FFOV Y": 28,
+                "CD": 30,
+                "MR": 31
+            },
+            "resolution x": 720,
+            "resolution y": 576,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        },
+        {
+            "type": "HV 500",
+            "manufacturer": "Oporto",
+            "cannot_measure": ["Parallelism", "Cylindricity"],
+            "FOV": {
+                "x": 31,
+                "y": 32,
+                "z": 33,
+                "D": 34,
+                "NFOV X": 35,
+                "NFOV Y": 36,
+                "FFOV X": 37,
+                "FFOV Y": 38,
+                "CD": 40,
+                "MR": 41
+            },
+            "resolution x": 320,
+            "resolution y": 200,
+            "dimension a/x": 0,
+            "dimension b/y": 0,
+            "dimension c/z": 0
+        }
+    ]
+}
