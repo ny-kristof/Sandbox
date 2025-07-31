@@ -23,7 +23,7 @@
             "name": "Surface Roughness",
             "type": "size",
             "icon": "../icons/measurements/surface_roughness.svg",
-            "unit": "µm"
+            "unit": "mm"
         },
         {
             "name": "Flatness",
@@ -56,7 +56,7 @@
             "unit": "mm"
         },
         {
-            "name": "Tilt angle",
+            "name": "Angularity",
             "type": "tolerance",
             "icon": "../icons/measurements/tilt_angle.svg",
             "unit": "mm"

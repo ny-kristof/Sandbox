@@ -8,8 +8,26 @@ class SurfSense:
         self.parent = parent
         self.reflection_ability = None
         self.kinematics = None
-        self.sampling_rate = None
+        self.sampling_rate = 10
+        self.sensor = None
+        self.number_of_sensors = 0
+    
 
+    def getSensor(self):
+        return self.sensor
+    
+
+    def setSensor(self, sensor):
+        self.sensor = sensor
+
+    
+    def getNumberOfSensors(self):
+        return self.number_of_sensors
+    
+
+    def setNumberOfSensors(self, value):
+        self.number_of_sensors = value
+    
     
     def getSamplingRate(self):
         return self.sampling_rate
@@ -65,8 +83,16 @@ class SurfSense:
         return None
 
 
+    def getMeasurementTypes(self):
+        m_types = []
+        for m in self.list_of_measurements:
+            m_types.append(m.measure_type)
+        return set(m_types)
+
+
+
 class MeasurementData:
-    def __init__(self, measure_type, tolerance, unit, object_list, measurement, doc_name, object_name=None):
+    def __init__(self, measure_type, tolerance, unit, object_list, measurement, doc_name, sampling_rate, object_name=None):
         SurfSensePanel.SurfSensePanel._measurement_count += 1
         self.id = SurfSensePanel.SurfSensePanel._measurement_count
         self.measure_type = measure_type
@@ -76,3 +102,9 @@ class MeasurementData:
         self.measurement = measurement
         self.doc_name = doc_name
         self.object_name = object_name
+        self.sampling_rate = sampling_rate
+        self.name = f"Measurement-{self.id}: {self.measure_type} | {self.measurement} {self.unit}"
+
+
+    def setMeasurementName(self, new_name):
+        self.name = new_name

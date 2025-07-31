@@ -21,7 +21,21 @@ class NewMeasure:
         self.list_widget.clicked.connect(self.onListItemClicked)
         self.parent.list_widget.clicked.connect(self.onParentListItemClicked)
         self.form.SamplingRate.valueChanged.connect(self.handleSamplingRateChange)
-        
+        icon = QtGui.QIcon(os.path.join(self.loc, "icons\\gear.svg"))
+        self.form.MeasurementSettingsBtn.setIcon(icon)
+        self.form.MeasurementSettingsBtn.clicked.connect(self.showMeasurementExtraSettings)
+        self.form.ExtraSettingsFrame.hide()
+        self.form.textbox.hide()
+        plus_less_icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_less.svg")).pixmap(QtCore.QSize(20,20))
+        self.form.PlusLessLabel.setPixmap(plus_less_icon)
+
+
+    def showMeasurementExtraSettings(self, checked):
+        if checked == True:
+            self.form.ExtraSettingsFrame.show()
+        else:
+            self.form.ExtraSettingsFrame.hide()
+
 
     def handleSamplingRateChange(self, value):
         self.form.SliderLabel.setText(str(value))
@@ -39,7 +53,7 @@ class NewMeasure:
             App.Console.PrintError(f"File not found: {json_path}")
             return
 
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(json_path, 'r', encoding="utf-8") as f:
             try:
                 data = json.load(f)
             except json.JSONDecodeError as e:
@@ -52,20 +66,25 @@ class NewMeasure:
             return
 
         for entry in measurements:
-            name = entry.get('name', 'Unknown')
-            icon_path = entry.get('icon', '')
-            item_type = entry.get('type', '')
-            unit = entry.get('unit', '')
+            name = entry.get("name", "Unknown")
+            icon_path = entry.get("icon", "")
+            item_type = entry.get("type", "")
+            unit = entry.get("unit", "")
 
             # Resolve relative paths based on the JSON file's directory
             if not os.path.isabs(icon_path):
                 icon_path = os.path.join(os.path.dirname(json_path), icon_path)
 
             icon = QtGui.QIcon(icon_path) if os.path.exists(icon_path) else QtGui.QIcon()
-            combo_box.addItem(icon, name)
+            combo_box.addItem(name)
 
             index = combo_box.count() - 1
-            combo_box.setItemData(index, {'type': item_type, 'unit': unit, 'name': name})
+            combo_box.setItemIcon(index, icon)
+            combo_box.setItemData(index, {"type": item_type, "unit": unit, "name": name})
+            # font = combo_box.font()
+            # font.setPointSize(12)
+            # combo_box.setFont(font)
+            combo_box.setIconSize(QtCore.QSize(25, 25))
         
         
     def handleMeasurementHistory(self, measurement_widget):
@@ -92,12 +111,13 @@ class NewMeasure:
         data = combo_box.itemData(index)
   
         if combo_box.currentIndex() != -1:
-            unit_label = self.form.unitLabel
-            unit_label.setText(data.get('unit'))
+            # unit_label = self.form.unitLabel
+            # unit_label.setText(data.get("unit"))
             tolerance_edit = self.form.unitLineEdit
             tolerance_edit.setText(str(self.parent.surf_sense.getBaseTolerance()))
 
             self.form.MeasureDetailsWidget.show()
+            self.form.DoubleEditContainer.hide()
             self.form.MeasureBtn.setEnabled(True)
 
 
@@ -110,27 +130,30 @@ class NewMeasure:
         
         for current_sel in sel:
             selected_value = combo_box.itemData(combo_box.currentIndex())
-            m_type = selected_value.get('name')
+            m_type = selected_value.get("name")
             m_tolerance = self.parent.surf_sense.getBaseTolerance()
-            m_unit = self.form.unitLabel.text()
+            m_unit = self.form.LowerUnitLabel.text()
             m_document_name = App.ActiveDocument.Label
             m_object_list = current_sel.SubElementNames
             m_object_name = current_sel.ObjectName
-                        
-            data = MeasurementData(m_type, m_tolerance, m_unit, m_object_list, 0, m_document_name, m_object_name)
+            m_sampling_rate = self.form.SamplingRate.value()
+
+            data = MeasurementData(m_type, m_tolerance, m_unit, m_object_list, 0, m_document_name, m_sampling_rate, m_object_name)
             measurement = self.parent.selection_planner.getElementsFromSelection()
             data.measurement = measurement
             self.parent.surf_sense.addMeasurementToList(data)
 
             self.addMeasurementToHistory(data)
-            self.handleMeasurementUIItems()       
+            self.handleMeasurementUIItems()
+
+        self.parent.populateSensorComboBox()
 
 
     def addMeasurementToHistory(self, data):
-        list_count = self.list_widget.count()
-        text = f"Measurement-{list_count + 1}: {data.measure_type} | {data.measurement} {data.unit}"
-        self.addListItemWithToListWidget(self.list_widget, text, data.id)
-        self.addListItemWithToListWidget(self.parent.list_widget, text, data.id)
+        # list_count = self.list_widget.count()
+        # text = f"Measurement-{list_count + 1}: {data.measure_type} | {data.measurement} {data.unit}"
+        self.addListItemWithToListWidget(self.list_widget, data.name, data.id)
+        self.addListItemWithToListWidget(self.parent.list_widget, data.name, data.id)
 
 
     def refreshMeasurementHistory(self):
@@ -138,10 +161,10 @@ class NewMeasure:
         self.parent.list_widget.clear()
 
         measurements = self.parent.surf_sense.getMeasurements()
-        for i, obj in enumerate(measurements):
-            text = f"Measurement-{i + 1}: {obj.measure_type} | {obj.measurement} {obj.unit}"
-            self.addListItemWithToListWidget(self.list_widget, text, obj.id)
-            self.addListItemWithToListWidget(self.parent.list_widget, text, obj.id)        
+        for obj in measurements:
+            # text = f"Measurement-{i + 1}: {obj.measure_type} | {obj.measurement} {obj.unit}"
+            self.addListItemWithToListWidget(self.list_widget, obj.name, obj.id)
+            self.addListItemWithToListWidget(self.parent.list_widget, obj.name, obj.id)        
 
 
     def onListItemClicked(self, index):
@@ -153,7 +176,7 @@ class NewMeasure:
                 Gui.Selection.clearSelection()
                 for obj in measurement.object_list:
                     Gui.Selection.addSelection(measurement.doc_name, measurement.object_name, obj)
-                print("Clicked in self.list_widget:", vars(measurement))
+                #print("Clicked in self.list_widget:", vars(measurement))
 
 
     def onParentListItemClicked(self, index):
@@ -184,6 +207,7 @@ class NewMeasure:
     def handleMeasurementDeletion(self):
         self.handleMeasurementUIItems()
         self.refreshMeasurementHistory()
+        self.parent.populateSensorComboBox()
 
 
     def handleMeasurementUIItems(self, id=0):
@@ -194,8 +218,8 @@ class NewMeasure:
     
     def resetMeasurementWidget(self):
         self.form.MeasureTypeCombobox.setCurrentIndex(-1)
-        self.form.unitLabel.setText("")
-        self.form.textbox.clear()
+        # self.form.unitLabel.setText("")
+        # self.form.textbox.clear()
         base_tolerance = self.parent.surf_sense.getBaseTolerance()
         sampling_rate = self.parent.surf_sense.getSamplingRate()
 

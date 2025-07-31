@@ -53,6 +53,7 @@ class SandboxWorkbench (Workbench): #type: ignore
         vm = QtGui.QDockWidget()
         
         path = os.path.join(os.getenv('APPDATA'), "FreeCAD\\Mod\\Sandbox")
+        # TODO check theme and connect to themechanges to handle ui appearance FreeCAD.ParamGet("User parameter:BaseApp/Preferences/MainWindow").GetString('Theme')
         surfsense_panel = SurfSensePanel.SurfSensePanel(path)
         vm.setWidget(surfsense_panel.form)
 
