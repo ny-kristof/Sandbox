@@ -275,9 +275,15 @@ class ListItemWidget(QtWidgets.QWidget):
 
 
     def remove_self(self):
+        surf_sense_id = -1
         for i in range(self.list_widget.count()):
             if self.list_widget.itemWidget(self.list_widget.item(i)) == self:
+                surf_sense_id = self.measurement_id
                 self.list_widget.takeItem(i)
                 break
-        
+    
         self.itemRemoved.emit(self.measurement_id)
+        for obj in App.ActiveDocument.Objects:
+            if hasattr(obj, "SurfSenseID"):
+                if obj.SurfSenseID == surf_sense_id:
+                    App.ActiveDocument.removeObject(obj.Name)

@@ -3,6 +3,7 @@ import FreeCADGui as Gui
 import Part
 from FreeCAD import Vector
 from BOPTools import SplitFeatures
+import SurfSensePanel
 
 
 class SectionSelObserver:
@@ -60,6 +61,8 @@ class SectionSelObserver:
         plane = Part.makePlane(plane_size, plane_size, center, self.normal)
         plane.translate(center.sub(plane.CenterOfMass))
         self.sectionPlane = App.ActiveDocument.addObject("Part::Feature", "ParallelPlane")
+        self.sectionPlane.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        self.sectionPlane.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         self.sectionPlane.Shape = plane
         self.placement = self.sectionPlane.Placement.copy()
 
@@ -118,6 +121,8 @@ class SectionSelObserver:
                 section = face.section(self.sectionPlane.Shape)
                 if section:
                     section_obj = App.ActiveDocument.addObject("Part::Feature", "Section")
+                    section_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+                    section_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
                     section_obj.Shape = section
                     self.sections.append(section_obj)
         if not self.sections:

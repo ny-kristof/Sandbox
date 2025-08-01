@@ -102,7 +102,8 @@ class SelectionPlanner:
             return
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeLengthMeasurement")
-
+        measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, sel.SubObjects[0], resolution= self.normals_resolution, aroundVertex=True , measurement_node = measurement_node, measurement_group = measurement_group)
         #TODO: Ez nagy hekk, használjuk mindenképpen, meg a discretise függvényt is, felosztja pl az élt
         
@@ -150,6 +151,7 @@ class SelectionPlanner:
             measurement_node = self.createMeasurementNode()
             measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceDistanceMeasurement")
             measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+            measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
             faces = [face1, face2]
             for i, face in enumerate(faces):
                 result = SubSurfaceCreator.sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group = measurement_group)
@@ -177,6 +179,7 @@ class SelectionPlanner:
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeDistanceMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         for i, edge in enumerate(sel.SubObjects):
             SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -202,6 +205,7 @@ class SelectionPlanner:
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleDistanceMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         for i, circle in enumerate(sel.SubObjects):
             SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -225,6 +229,7 @@ class SelectionPlanner:
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndLineMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, circle, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, line, resolution=self.normals_resolution, aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
@@ -256,6 +261,8 @@ class SelectionPlanner:
         plane.translate(center.sub(plane.CenterOfMass))
         # Add the plane to the FreeCAD document
         plane_obj = doc.addObject("Part::Feature", "CirclePlane")
+        plane_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        plane_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         plane_obj.Shape = plane
         doc.recompute()
 
@@ -268,6 +275,8 @@ class SelectionPlanner:
         doc.removeObject(plane_obj.Label)
 
         section_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "CircleSection")
+        section_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        section_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         section_obj.Shape = section
 
         bool_frag = SplitFeatures.makeBooleanFragments(name="CircleSectionFragments")
@@ -281,6 +290,7 @@ class SelectionPlanner:
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "CircleAndCylinderMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         for edge in section_obj.Shape.Edges:
             frag_edge = SubSurfaceCreator.findEdgeOnObject(bool_frag.Shape, edge)
             if frag_edge:
@@ -316,6 +326,7 @@ class SelectionPlanner:
         measurement_node = self.createMeasurementNode()
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "EdgeAndPlaneMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         SubSurfaceCreator.createNeighborSubsurfaces(sel.Object, edge, resolution=self.normals_resolution, radius=(22.5-15.0), aroundVertex=False, measurement_node=measurement_node, measurement_group=measurement_group)
 
         result = SubSurfaceCreator.sample_surface_by_spacing(plane, spacing_mm=1.0, measurement_group=measurement_group, detailOutline=True)
@@ -462,12 +473,15 @@ class SelectionPlanner:
         face_obj : Part.Face = None
         measurement_group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroup", "FaceFragmentMeasurement")
         measurement_group.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+        measurement_group.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
         # Check if the sketch is fully constrained and closed
         # if sketch.FullyConstrained and self.isSketchClosed(sketch):
         if self.isSketchClosed(sketch):
             try:
                 face = Part.Face(sketch.Shape)
                 face_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "SketchFace")
+                face_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+                face_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
                 face_obj.Shape = face
                 FreeCAD.ActiveDocument.recompute()
             except Exception as e:
@@ -560,6 +574,8 @@ class SelectionPlanner:
             
             # Add the face to the FreeCAD document
             face_obj = FreeCAD.ActiveDocument.addObject("Part::Feature", "RectangleFace")
+            face_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+            face_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
             face_obj.Shape = facePart
             
             # Set the face's color
