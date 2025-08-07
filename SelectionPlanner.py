@@ -357,6 +357,15 @@ class SelectionPlanner:
         measurement_node.set("SurfSenseID", str(SurfSensePanel.SurfSensePanel._measurement_count))
         self.measurement_index += 1
         return measurement_node
+    
+
+    def removeMeasurementNode(self, surfsense_id):
+        target_id = str(surfsense_id)
+        to_remove = [m for m in self.measurements_node.findall("Measurement") if m.get("SurfSenseID") == target_id]
+
+        for measurement in to_remove:
+            self.measurements_node.remove(measurement)
+
 
     def displayFaceVertexInfo(self, faces):
         for i, face in enumerate(faces):

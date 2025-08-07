@@ -214,6 +214,7 @@ class NewMeasure:
         # TODO handle clearselection if a selected item is deleted (if it's needed)
         widget.itemRemoved.connect(self.parent.surf_sense.removeMeasurement)
         widget.itemRemoved.connect(self.handleMeasurementDeletion)
+        widget.itemRemoved.connect(self.parent.selection_planner.removeMeasurementNode)
 
         item.setSizeHint(widget.sizeHint())
         target_list_widget.addItem(item)
