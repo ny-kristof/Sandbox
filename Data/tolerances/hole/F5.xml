@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">F5</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit> 10</Upper_limit>
+        <Lower_limit> 6</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit> 15</Upper_limit>
+        <Lower_limit> 10</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit> 19</Upper_limit>
+        <Lower_limit> 13</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="10-18">
+        <Upper_limit> 24</Upper_limit>
+        <Lower_limit> 16</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="18-30">
+        <Upper_limit> 29</Upper_limit>
+        <Lower_limit> 20</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-50">
+        <Upper_limit> 36</Upper_limit>
+        <Lower_limit> 25</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="50-80">
+        <Upper_limit> 43</Upper_limit>
+        <Lower_limit> 30</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="80-120">
+        <Upper_limit> 51</Upper_limit>
+        <Lower_limit> 36</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="120-180">
+        <Upper_limit> 61</Upper_limit>
+        <Lower_limit> 43</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="180-250">
+        <Upper_limit> 70</Upper_limit>
+        <Lower_limit> 50</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="250-315">
+        <Upper_limit> 79</Upper_limit>
+        <Lower_limit> 56</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="315-400">
+        <Upper_limit> 87</Upper_limit>
+        <Lower_limit> 62</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="400-500">
+        <Upper_limit> 95</Upper_limit>
+        <Lower_limit> 68</Lower_limit>
+    </Nominal_size>
+</Data>

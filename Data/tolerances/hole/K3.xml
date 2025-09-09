@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">K3</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit>0</Upper_limit>
+        <Lower_limit>-2</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit>0</Upper_limit>
+        <Lower_limit>-2.5</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit>0</Upper_limit>
+        <Lower_limit>-2.5</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="10-18">
+        <Upper_limit>0</Upper_limit>
+        <Lower_limit>-3</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="18-30">
+        <Upper_limit>-0.5</Upper_limit>
+        <Lower_limit>-4.5</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-50">
+        <Upper_limit>-0.5</Upper_limit>
+        <Lower_limit>-4.5</Lower_limit>
+    </Nominal_size>
+</Data>

@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Shaft">p9</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit> 31</Upper_limit>
+        <Lower_limit> 6</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit> 42</Upper_limit>
+        <Lower_limit> 12</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit> 51</Upper_limit>
+        <Lower_limit> 15</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="10-18">
+        <Upper_limit> 61</Upper_limit>
+        <Lower_limit> 18</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="18-30">
+        <Upper_limit> 74</Upper_limit>
+        <Lower_limit> 22</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-50">
+        <Upper_limit> 88</Upper_limit>
+        <Lower_limit> 26</Lower_limit>
+    </Nominal_size>
+</Data>

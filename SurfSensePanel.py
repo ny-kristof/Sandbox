@@ -9,11 +9,13 @@ import SelectionPlanner
 import NewMeasure
 import CSExporter
 import xml.etree.ElementTree as ET
+from NewMeasure import ListItemWidget
 
 
 class SurfSensePanel(QtWidgets.QWidget):
     _measurement_count = 0
     _sensor_icon_size = QtCore.QSize(16, 16)
+    MICROMETERTOMM = 0.001
     # TODO avoid magic numbers?
     # ZERO = 0
     # ONE = 1
@@ -22,14 +24,15 @@ class SurfSensePanel(QtWidgets.QWidget):
     def __init__(self, loc, parent=None):
         super().__init__(parent)
         # dlg =  os.path.join(loc, "SurfSenseHorizontal.ui")
-        dlg =  os.path.join(loc, "UI\\SurfSenseVertical.ui")
         self.loc = loc
+        dlg =  os.path.join(self.loc, "UI\\SurfSenseVertical.ui")
+        self.loadSensorUnits()
         self.form = Gui.PySideUic.loadUi(dlg)
         self.surf_sense = SurfSense(self)
         self.list_widget = self.form.MeasurementsListWidget
         self.new_measure = NewMeasure.NewMeasure(self, loc)
         self.selection_planner = SelectionPlanner.SelectionPlanner(self.new_measure.form)
-        # self.selObserver = SurfSenseSelObserver(self.new_measure.form)
+        self.selObserver = SurfSenseSelObserver(self, self.new_measure)
         self.docObserver = DocObserver(self)
         App.addDocumentObserver(self.docObserver)
 
@@ -46,14 +49,13 @@ class SurfSensePanel(QtWidgets.QWidget):
         self.new_measure.handleMeasurementHistory(self.form.Measurements)
         icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_sign.svg"))
         self.form.AddSensor.setIcon(icon)
-        self.disableSensorSelectorUI()
+        # self.disableSensorSelectorUI()
         self.handleMeasurementSaveButtonState()
         self.populateSensorLegendLabel()
         dialog =  os.path.join(self.loc, "UI\\SensorDetails.ui")
         self.form.SensorDataLayout.setWidget(0, QtGui.QFormLayout.FieldRole, Gui.PySideUic.loadUi(dialog))
         # findchild?
         self.form.SensorDataLayout.itemAt(0, QtGui.QFormLayout.FieldRole).widget().hide()
-        
         
     
     def initConnections(self):
@@ -75,6 +77,17 @@ class SurfSensePanel(QtWidgets.QWidget):
         QtWidgets.QApplication.instance().installEventFilter(self)
 
 
+    def loadSensorUnits(self):
+        sensor_unit_path = os.path.join(self.loc, "Data\\sensor_unit.xml")
+        tree = ET.parse(sensor_unit_path)
+        root = tree.getroot()
+
+        data = {}
+        for child in root:
+            data[child.tag] = child.text.strip() if child.text else None
+        self.sensor_unit = data
+
+
     def importModel(self):
         Gui.runCommand("Std_Open")
         if Gui.ActiveDocument == None:
@@ -92,15 +105,15 @@ class SurfSensePanel(QtWidgets.QWidget):
         self.new_measure.resetMeasurementWidget()
         self.new_measure.handleMeasurementHistory(measure_widget.Measurements)
                             
-        # Gui.Selection.addObserver(self.selObserver)
-        # self.selObserver.addSelectedItemToSelection()
+        Gui.Selection.addObserver(self.selObserver)
+        self.selObserver.addSelectedItemToSelection()
        
 
     def closeMeasureWidget(self, measure_widget):
         self.form.ExtraLayout.removeWidget(measure_widget)
         measure_widget.hide()
         self.form.toolBox.show()
-        # Gui.Selection.removeObserver(self.selObserver)
+        Gui.Selection.removeObserver(self.selObserver)
 
 
     def handleMeasurementSaveButtonState(self):
@@ -173,32 +186,46 @@ class SurfSensePanel(QtWidgets.QWidget):
         sensor_data = self.findSensorByManufacturerAndSeries(manufacturer, series)
         if sensor_data is not None:
             sensor_dict = self.sensorElementToDict(sensor_data)
-            print(sensor_dict)
-            
-        # fov_data = data.get("FOV")
+            # print(sensor_dict)
 
-        # sensor_layout = self.form.SensorHelperMsgLayout
-        # if sensor_layout.rowCount() != 0:
-        #     while sensor_layout.rowCount() > 0:
-        #         sensor_layout.removeRow(0)
-
-        # conflict_count = data.get("_conflict_count")
-        # state = self.getConflictIcon(conflict_count)
-        # tool_tip = self.createToolTipForSensorMeasure(data.get("_conflict_list"))
-
-        # icon_label = QtGui.QLabel()
-        # icon_label.setPixmap(state[0].pixmap(self._sensor_icon_size))
-                    
-        # sensor_layout.addRow(icon_label, QtGui.QLabel(state[1]))
-        # if conflict_count != 0:
-        #     sensor_layout.addRow("", QtGui.QLabel(tool_tip))
+        ffov = sensor_dict['Field_of_View_FAR'].split("x")
+        nfov = sensor_dict['Field_of_View_NEAR'].split("x")
         
-        # if index > -1:
-        #     if self.form.SensorDetails.isHidden():
-        #         self.form.SensorDetails.show()
+        fov_data = {}    
+        fov_data["x"] = sensor_dict["Sensor_size_width"]
+        fov_data["y"] = sensor_dict["Sensor_size_length"]
+        fov_data["z"] = sensor_dict["Sensor_size_height"]
+        fov_data["D"]  = "??"
+        fov_data["NFOV X"] = nfov[0]
+        fov_data["NFOV Y"] = nfov[1]
+        fov_data["FFOV X"] = ffov[0]
+        fov_data["FFOV Y"] = ffov[1]
+        fov_data["CD"] = sensor_dict["Clearance_Distance"]
+        fov_data["MR"] = "??"
+
+        sensor_layout = self.form.SensorHelperMsgLayout
+        if sensor_layout.rowCount() != 0:
+            while sensor_layout.rowCount() > 0:
+                sensor_layout.removeRow(0)
+
+        conflict_count = data.get("_conflict_count")
+        state = self.getConflictIcon(conflict_count)
+        tool_tip = self.createToolTipForSensorMeasure(data.get("_cannot_measure"))
+
+        icon_label = QtGui.QLabel()
+        icon_label.setPixmap(state[0].pixmap(self._sensor_icon_size))
+                    
+        sensor_layout.addRow(icon_label, QtGui.QLabel(state[1]))
+        if conflict_count != 0:
+            sensor_layout.addRow("", QtGui.QLabel(tool_tip))
+        
+        if index > -1:
+            if self.form.SensorDetails.isHidden():
+                self.form.SensorDetails.show()
             
-        #     self.loadSensorDetails(fov_data)
+            self.loadSensorDetails(fov_data)
             #detail_layout = self.form.SensorDetailsLayout
+        self.handleSensorCounterChange(self.form.SensorCounterLineEdit.text())
         
 
     def loadSensorDetails(self, fov_data):
@@ -301,12 +328,14 @@ class SurfSensePanel(QtWidgets.QWidget):
         for sensor in sensors:
             for measurement in measurements:
                 m_type = measurement.measure_type
-                m_tolerance =  self.safeToFloat(measurement.tolerance)
+                u_tolerance =  self.safeToFloat(measurement.upper_tolerance)
+                l_tolerance = self.safeToFloat(measurement.lower_tolerance)
                 m_sampling_rate =  self.safeToFloat(measurement.sampling_rate)
                 res_xy_far = self.safeToFloat(sensor.get("Resolution_XY_FAR", 0.0))
                 res_z_far = self.safeToFloat(sensor.get("Resolution_Z_FAR", 0.0))
-                res_xy_far_in_mm = res_xy_far / 1000 # measurement unit is mm so to compare to µm need this divison
-                res_z_far_in_mm = res_z_far / 1000 # measurement unit is mm so to compare to µm need this divison
+                # res_xy_far_in_mm = res_xy_far / SurfSensePanel.MMTOMICROMETER # measurement unit is mm so to compare to µm need this divison
+                res_xy_far_in_mm = res_xy_far * SurfSensePanel.MICROMETERTOMM if self.sensor_unit["Resolution_XY_FAR"] == "µm" else res_xy_far
+                res_z_far_in_mm = res_z_far * SurfSensePanel.MICROMETERTOMM if self.sensor_unit["Resolution_Z_FAR"] == "µm" else res_z_far
                 # print(f"++++++++++++++++++++++++++++++++++")
                 # print(f"snesor: {sensor}")
                 # print(f"m_type: {m_type}")
@@ -315,7 +344,9 @@ class SurfSensePanel(QtWidgets.QWidget):
                 # print(f"res_xy_far: {res_xy_far_in_mm}")
                 # print(f"res_z_far: {res_z_far_in_mm}")
                 # print(f"++++++++++++++++++++++++++++++++++")
-                if m_tolerance * m_sampling_rate < res_xy_far_in_mm:
+                m_tolerance = abs(u_tolerance) if abs(u_tolerance) < abs(l_tolerance) else abs(l_tolerance)
+                                                                        # res_z_far is unknown at this moment
+                if m_tolerance * m_sampling_rate >= res_xy_far_in_mm:   # and m_tolerance * m_sampling_rate >= res_z_far_in_mm:
                     sensor["_conflict_count"] += 1
                     sensor["_cannot_measure"].append(measurement.name)
 
@@ -485,8 +516,8 @@ class SurfSensePanel(QtWidgets.QWidget):
 
 
     def createToolTipForSensorMeasure(self, conflict_list):
-        conflict_list = ", ".join(conflict_list)
-        tooltip = f"Cannot measure: {conflict_list}"
+        conflict_list = "\n".join(conflict_list)
+        tooltip = f"Cannot measure:\n{conflict_list}"
         return tooltip
 
 
@@ -510,12 +541,14 @@ class SurfSensePanel(QtWidgets.QWidget):
         if checked == True:
             self.form.SensorLegend.hide()
             self.form.NumberOfSensorLabel.hide()
+            self.form.SensorCounterLineEdit.hide()
             self.form.PcsLabel.hide()
             sensor_detail_widget.show()
             self.form.ShowSensorData.setText("Hide details")
         else:
             self.form.SensorLegend.show()
             self.form.NumberOfSensorLabel.show()
+            self.form.SensorCounterLineEdit.show()
             self.form.PcsLabel.show()
             sensor_detail_widget.hide()
             self.form.ShowSensorData.setText("Show details")
@@ -534,17 +567,62 @@ class SurfSensePanel(QtWidgets.QWidget):
         print(vars(self.surf_sense))
 
 
+    def getRadiusFromSelection(self):
+        try:
+            sel = Gui.Selection.getSelectionEx()
+            if not sel:
+                print("No selection")
+                return None
+
+            # If user selected the whole object instead of sub-elements
+            if not sel[0].SubObjects:
+                print("No sub-shapes selected (edge/face needed)")
+                return None
+
+            shape = sel[0].SubObjects[0]  # First selected sub-shape
+
+            if shape.ShapeType == "Edge":
+                curve = shape.Curve
+                if curve.TypeId == 'Part::GeomCircle':
+                    return curve.Radius
+                else:
+                    print("Edge is not a circle")
+                    return None
+                    
+            elif shape.ShapeType == "Face":
+                surf = shape.Surface
+                if surf.TypeId == 'Part::GeomCylinder':
+                    return surf.Radius
+                elif surf.TypeId == 'Part::GeomSphere':
+                    return surf.Radius
+                elif surf.TypeId == 'Part::GeomTorus':
+                    return surf.MinorRadius
+                else:
+                    print("Face is not cylinder/sphere/torus")
+                    return None
+
+            else:
+                print(f"Unsupported shape type: {shape.ShapeType}")
+                return None
+
+        except Exception as e:
+            print("Error while computing radius:", e)
+
+        return None
+
+
 class SurfSenseSelObserver:
     """
     causes an action to the mouse click on an object
     This function remains resident (in memory) with the function "addObserver(s)"
     "removeObserver(s) # Uninstalls the resident function
     """
-    def __init__(self, m_widget):
-        measure_widget = m_widget
-        self.list_view = measure_widget.SelectedObjects
+    def __init__(self, parent, m_widget):
+        self.measure_widget = m_widget
+        self.parent = parent
+        # self.list_view = measure_widget.SelectedObjects
         self.model = QtGui.QStandardItemModel()
-        self.list_view.setModel(self.model)
+        # self.list_view.setModel(self.model)
 
 
     def setPreselection(self,doc,obj,sub):                                      # Preselection object
@@ -555,17 +633,19 @@ class SurfSenseSelObserver:
     def addSelection(self,doc,obj,sub,pnt):                                   # Selection object
         # App.Console.PrintMessage("add"+ "\n")
         # App.Console.PrintMessage(str(doc)+ "\n")                              # Name of the document
-        # App.Console.PrintMessage(str(obj)+ "\n")                              # Name of the object
-        # App.Console.PrintMessage(str(sub)+ "\n")                              # The part of the object name
+        App.Console.PrintMessage(str(obj)+ "\n")                              # Name of the object
+        App.Console.PrintMessage(str(sub)+ "\n")                              # The part of the object name
         # App.Console.PrintMessage(str(pnt)+ "\n")                              # Coordinates of the object
         # App.Console.PrintMessage("______"+ "\n")
-        self.addSelectedItemToSelection()
+        # self.addSelectedItemToSelection()
+        self.handleSelection()
 
 
     def removeSelection(self,doc,obj,sub):                                    # Remove the selection
         # App.Console.PrintMessage("remove"+ "\n")
         self.model.clear()
-        self.addSelectedItemToSelection()
+        #self.addSelectedItemToSelection()
+        self.handleSelection()
 
 
     def setSelection(self,doc):                                               # Set selection
@@ -576,6 +656,7 @@ class SurfSenseSelObserver:
     def clearSelection(self,doc):
         #App.Console.PrintMessage("clear"+ "\n")                               # If click on another object, clear the previous object
         self.model.clear()
+        self.handleSelection()
 
 
     def addSelectedItemToSelection(self, doc=None, obj1=None, sub=None):
@@ -586,13 +667,27 @@ class SurfSenseSelObserver:
                 for idx, obj in enumerate(sel[i].SubElementNames):
                     message = f"{idx + 1} - {obj}"
                     item = QtGui.QStandardItem(message)
-                    self.model.appendRow(item) 
+                    self.model.appendRow(item)
+    
 
+    def handleSelection(self):
+        sel = Gui.Selection.getSelectionEx()
+        mw = Gui.getMainWindow()
+        general_tolerance = mw.findChild(QtGui.QLineEdit, "GeneralToleranceSearchBox")
+        if general_tolerance is not None:
+            if len(sel):
+                if len(sel[0].SubElementNames) == 1:
+                    if general_tolerance.text() != "":
+                        self.measure_widget.onOptionSelected(general_tolerance.text())
+                else:
+                    if general_tolerance.text() != "":
+                        self.parent.new_measure.setGeneralToleranceInputFields("-", "-")
 
 
 class DocObserver:
     def __init__(self, parent=None):
         self.parent = parent
+
 
     def slotActivateDocument(self,doc):
         print(doc.Name)
@@ -605,3 +700,22 @@ class DocObserver:
                 measurement.name = obj.Label
                 self.parent.new_measure.refreshMeasurementHistory()
                 self.parent.populateSensorComboBox()
+
+
+    def slotDeletedObject(self, obj):
+        if hasattr(obj, "SurfSenseID"):
+            surf_sense_id = obj.SurfSenseID
+            measurement = self.parent.surf_sense.getMeasurementByID(surf_sense_id)
+            if measurement:
+                succes = self.parent.surf_sense.removeMeasurement(surf_sense_id)
+                if succes:
+                    print(f"Measurement with ID-{surf_sense_id} is removed")
+                    mw = Gui.getMainWindow()
+                    list_item_widget_id = f"Measurement-{surf_sense_id}"
+                    label  = mw.findChild(QtWidgets.QLabel, list_item_widget_id)
+                    if label:
+                        parent_widget = label.parentWidget()
+                        if isinstance(parent_widget, ListItemWidget):
+                            parent_widget.remove_self(False)
+                else:
+                    print(f"Something went wrong {surf_sense_id}")

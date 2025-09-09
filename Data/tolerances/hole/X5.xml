@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">X5</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit>-20</Upper_limit>
+        <Lower_limit>-24</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit>-27</Upper_limit>
+        <Lower_limit>-32</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit>-32</Upper_limit>
+        <Lower_limit>-38</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="10-14">
+        <Upper_limit>-37</Upper_limit>
+        <Lower_limit>-45</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="14-18">
+        <Upper_limit>-42</Upper_limit>
+        <Lower_limit>-50</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="18-24">
+        <Upper_limit>-51</Upper_limit>
+        <Lower_limit>-60</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="24-30">
+        <Upper_limit>-61</Upper_limit>
+        <Lower_limit>-70</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-40">
+        <Upper_limit>-76</Upper_limit>
+        <Lower_limit>-87</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="40-50">
+        <Upper_limit>-93</Upper_limit>
+        <Lower_limit>-104</Lower_limit>
+    </Nominal_size>
+</Data>

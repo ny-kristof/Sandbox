@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Shaft">y10</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="18-24">
+        <Upper_limit> 147</Upper_limit>
+        <Lower_limit> 63</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="24-30">
+        <Upper_limit> 159</Upper_limit>
+        <Lower_limit> 75</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-40">
+        <Upper_limit> 194</Upper_limit>
+        <Lower_limit> 94</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="40-50">
+        <Upper_limit> 214</Upper_limit>
+        <Lower_limit> 114</Lower_limit>
+    </Nominal_size>
+</Data>

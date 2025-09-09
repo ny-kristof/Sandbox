@@ -169,7 +169,7 @@
    <item row="10" column="0">
     <widget class="QWidget" name="MeasureDetailsWidget" native="true">
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QFrame" name="SignalEditContainer">
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>
@@ -215,7 +215,17 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Tolerance accuracy:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QFrame" name="DoubleEditContainer">
         <property name="styleSheet">
          <string notr="true"/>
@@ -235,7 +245,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QLineEdit" name="UpperToleranceLimit">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="UpperUnitLabel">
@@ -268,7 +285,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="unitLineEdit_2">
+          <widget class="QLineEdit" name="LowerToleranceLimit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -302,14 +319,23 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Tolerance accuracy:</string>
+      <item row="1" column="0">
+       <widget class="QFrame" name="GeneralTolerancesframe">
+        <property name="frameShape">
+         <enum>QFrame::Shape::StyledPanel</enum>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Raised</enum>
         </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>General tolerances:</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

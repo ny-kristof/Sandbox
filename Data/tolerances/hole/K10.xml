@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">K10</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit>0</Upper_limit>
+        <Lower_limit>-40</Lower_limit>
+    </Nominal_size>
+</Data>

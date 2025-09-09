@@ -1,16 +1,17 @@
 import SurfSensePanel
-import FreeCAD
+import FreeCAD as App
 
 class SurfSense:
     def __init__(self, parent=None):
-        self.base_tolerance = 0.5
+        self.lower_tolerance = 0.0
+        self.upper_tolerance = 0.1
         self.list_of_measurements = []
         self.parent = parent
         self.reflection_ability = None
         self.kinematics = None
         self.sampling_rate = 10
         self.sensor = None
-        self.number_of_sensors = 0
+        self.number_of_sensors = 1
     
 
     def getSensor(self):
@@ -53,12 +54,20 @@ class SurfSense:
         self.reflection_ability = value
 
 
-    def setBaseTolerance(self, value):
-        self.base_tolerance = value
+    def setBaseTolerance(self, tolerance_type, value):
+        match tolerance_type:
+            case "lower":
+                self.lower_tolerance = value
+                return
+            case "upper":
+                self.upper_tolerance = value
+                return
+            case _:
+                App.Console.PrintWarning("Unexpected tolerance type")
 
 
     def getBaseTolerance(self):
-        return self.base_tolerance
+        return (self.lower_tolerance, self.upper_tolerance)
     
 
     def getMeasurements(self):
@@ -73,7 +82,8 @@ class SurfSense:
         for m in self.list_of_measurements:
             if m.id == id:
                 self.list_of_measurements.remove(m)
-                break
+                return True
+        return False
 
     
     def getMeasurementByID(self, id):
@@ -92,11 +102,12 @@ class SurfSense:
 
 
 class MeasurementData:
-    def __init__(self, measure_type, tolerance, unit, object_list, measurement, doc_name, sampling_rate, object_name=None):
+    def __init__(self, measure_type, lower_tolerance, upper_tolerance, unit, object_list, measurement, doc_name, sampling_rate, object_name=None):
         SurfSensePanel.SurfSensePanel._measurement_count += 1
         self.id = SurfSensePanel.SurfSensePanel._measurement_count
         self.measure_type = measure_type
-        self.tolerance = tolerance
+        self.lower_tolerance = lower_tolerance
+        self.upper_tolerance = upper_tolerance
         self.unit = unit
         self.object_list = object_list
         self.measurement = measurement

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">M6</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit>-2</Upper_limit>
+        <Lower_limit>-8</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit>-1</Upper_limit>
+        <Lower_limit>-9</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit>-3</Upper_limit>
+        <Lower_limit>-12</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="10-18">
+        <Upper_limit>-4</Upper_limit>
+        <Lower_limit>-15</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="18-30">
+        <Upper_limit>-4</Upper_limit>
+        <Lower_limit>-17</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="30-50">
+        <Upper_limit>-4</Upper_limit>
+        <Lower_limit>-20</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="50-80">
+        <Upper_limit>-5</Upper_limit>
+        <Lower_limit>-24</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="80-120">
+        <Upper_limit>-6</Upper_limit>
+        <Lower_limit>-28</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="120-180">
+        <Upper_limit>-8</Upper_limit>
+        <Lower_limit>-33</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="180-250">
+        <Upper_limit>-8</Upper_limit>
+        <Lower_limit>-37</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="250-315">
+        <Upper_limit>-9</Upper_limit>
+        <Lower_limit>-41</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="315-400">
+        <Upper_limit>-10</Upper_limit>
+        <Lower_limit>-46</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="400-500">
+        <Upper_limit>-10</Upper_limit>
+        <Lower_limit>-50</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="500-630">
+        <Upper_limit>-26</Upper_limit>
+        <Lower_limit>-70</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="630-800">
+        <Upper_limit>-30</Upper_limit>
+        <Lower_limit>-80</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="800-1000">
+        <Upper_limit>-34</Upper_limit>
+        <Lower_limit>-90</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="1000-1250">
+        <Upper_limit>-40</Upper_limit>
+        <Lower_limit>-106</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="1250-1600">
+        <Upper_limit>-48</Upper_limit>
+        <Lower_limit>-126</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="1600-2000">
+        <Upper_limit>-58</Upper_limit>
+        <Lower_limit>-150</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="2000-2500">
+        <Upper_limit>-68</Upper_limit>
+        <Lower_limit>-178</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="2500-3150">
+        <Upper_limit>-76</Upper_limit>
+        <Lower_limit>-211</Lower_limit>
+    </Nominal_size>
+</Data>

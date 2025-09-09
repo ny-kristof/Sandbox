@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Data>
+    <Fundamental_Deviation type="Hole">EF6</Fundamental_Deviation>
+    <Unit>µm</Unit>
+    <Nominal_size value="0-3">
+        <Upper_limit> 16</Upper_limit>
+        <Lower_limit> 10</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="3-6">
+        <Upper_limit> 22</Upper_limit>
+        <Lower_limit> 14</Lower_limit>
+    </Nominal_size>
+    <Nominal_size value="6-10">
+        <Upper_limit> 27</Upper_limit>
+        <Lower_limit> 18</Lower_limit>
+    </Nominal_size>
+</Data>
