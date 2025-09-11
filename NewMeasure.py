@@ -19,6 +19,7 @@ class NewMeasure:
 
         self.form.MeasureCancelBtn.clicked.connect(lambda: self.parent.closeMeasureWidget(self.form))
         self.form.MeasureBtn.clicked.connect(self.runMeasurement)
+        self.form.ToleranceLabel.hide()
         self.form.MeasureDetailsWidget.hide()
         self.form.MeasureBtn.setEnabled(False)
         self.form.unitLineEdit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.unitLineEdit.text(), self.form.unitLineEdit))
@@ -257,6 +258,8 @@ class NewMeasure:
 
 
     def handleToleranceChange(self, value, edit):
+        if edit.isReadOnly():
+            return
         line_edit = edit.objectName()
         value = value.replace(',', '.')
         (prev_lower_tolerance, prev_upper_tolerance) = self.parent.surf_sense.getBaseTolerance()
@@ -312,6 +315,7 @@ class NewMeasure:
             tolerance_type = data.get("type")
             self.showRelatedToleranceInput(tolerance_type)
             self.form.MeasureDetailsWidget.show()
+            self.form.ToleranceLabel.show()
             (lower_tolerance, upper_tolerance) = self.parent.surf_sense.getBaseTolerance()
             if self.form.DoubleEditContainer.isVisible() is True:
                 if self.form.UpperToleranceLimit.text() == "-" or self.form.LowerToleranceLimit.text() == "-":
@@ -458,6 +462,7 @@ class NewMeasure:
             self.form.LowerToleranceLimit.setText(str(base_tolerance[0]))
 
         self.form.MeasureDetailsWidget.hide()
+        self.form.ToleranceLabel.hide()
         self.form.MeasureBtn.setEnabled(False)
         self.current_tolerance = {}
         self.form.SearchBox.setText("")

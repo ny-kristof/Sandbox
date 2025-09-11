@@ -26,6 +26,8 @@ class SurfSensePanel(QtWidgets.QWidget):
         # dlg =  os.path.join(loc, "SurfSenseHorizontal.ui")
         self.loc = loc
         dlg =  os.path.join(self.loc, "UI\\SurfSenseVertical.ui")
+        sensor_dialog =  os.path.join(self.loc, "UI\\SensorSpecification.ui")
+        self.sensor_widget = Gui.PySideUic.loadUi(sensor_dialog)
         self.loadSensorUnits()
         self.form = Gui.PySideUic.loadUi(dlg)
         self.surf_sense = SurfSense(self)
@@ -49,6 +51,7 @@ class SurfSensePanel(QtWidgets.QWidget):
         self.new_measure.handleMeasurementHistory(self.form.Measurements)
         icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_sign.svg"))
         self.form.AddSensor.setIcon(icon)
+        self.form.AddKinematic.setIcon(icon)
         # self.disableSensorSelectorUI()
         self.handleMeasurementSaveButtonState()
         self.populateSensorLegendLabel()
@@ -56,7 +59,10 @@ class SurfSensePanel(QtWidgets.QWidget):
         self.form.SensorDataLayout.setWidget(0, QtGui.QFormLayout.FieldRole, Gui.PySideUic.loadUi(dialog))
         # findchild?
         self.form.SensorDataLayout.itemAt(0, QtGui.QFormLayout.FieldRole).widget().hide()
-        
+        # self.form.KinematicsComboBox.hide()
+        # self.form.KinematicsComboBoxLabel.hide()
+        self.form.KinematicDetailsFrame.hide()
+        self.loadKinematics()
     
     def initConnections(self):
         self.form.ImportBtn.clicked.connect(self.importModel)
@@ -72,10 +78,114 @@ class SurfSensePanel(QtWidgets.QWidget):
         self.form.SensorCombobox.currentIndexChanged.connect(lambda: self.handleSensorChange())
         self.form.SensorCounterLineEdit.editingFinished.connect(lambda: self.handleSensorCounterChange(self.form.SensorCounterLineEdit.text()))
         self.form.ShowSensorData.clicked.connect(self.showSensorDetails)
-        self.form.KinematicsComboBox.hide()
-        self.form.KinematicsComboBoxLabel.hide()
+        self.sensor_widget.SensorCancelBtn.clicked.connect(self.handleSensorBackButton)
+        self.form.KinematicsComboBox.currentIndexChanged.connect(lambda: self.handleKinematicChange())
         QtWidgets.QApplication.instance().installEventFilter(self)
 
+
+    def handleKinematicChange(self):
+        robot_btn_check_state = self.form.RobotButton.isChecked()
+        combo_box = self.form.KinematicsComboBox
+        index = combo_box.currentIndex()
+        data = combo_box.itemData(index)
+        if robot_btn_check_state and index != -1:
+            data_list = []
+            max_load = ("Maxload", str(data.get("max_load")))
+            max_reach = ("MaxReach", str(data.get("max_reach")))
+            data_list.append(max_load)
+            data_list.append(max_reach)
+            self.populateKinematicDetails(data_list)
+        else:
+            pass
+        
+        # print(data)
+
+    def handleSensorBackButton(self):
+        self.form.ExtraLayout.removeWidget(self.sensor_widget)
+        self.sensor_widget.hide()
+        self.form.toolBox.show()
+
+
+    def loadKinematics(self):
+        filename = os.path.join(self.loc, "Data\\Kinematics.xml")
+        tree = ET.parse(filename)
+        root = tree.getroot()
+
+        self.robots = {}
+        self.manipulators = {}
+
+        for kin in root.findall("Kinematics"):
+            robot = {
+                "name": kin.attrib.get("name"),
+                "manufacturer": kin.attrib.get("Manuf"),
+                "type": kin.attrib.get("Type", "Robot"),  # default fallback
+                "max_speed": float(kin.attrib.get("MaxPathSpeed", 0)),
+                "max_accel": float(kin.attrib.get("MaxPathAccel", 0)),
+                "max_load": float(kin.attrib.get("MaxLoad", 0)),
+                "max_reach": float(kin.attrib.get("MaxReach", 0)),
+                "axes": [],
+                "params": []
+            }
+
+            # --- collect params if present ---
+            params_el = kin.find("params")
+            if params_el is not None:
+                for p in params_el.findall("param"):
+                    robot["params"].append({
+                        "value": p.text.strip() if p.text else None,
+                        "note": p.attrib.get("note")
+                    })
+
+            # --- collect axis data ---
+            for axis in kin.findall("Axis"):
+                axis_data = {
+                    "name": axis.attrib.get("name"),
+                    "reference": axis.attrib.get("reference"),
+                    "type": axis.attrib.get("type"),
+                    "rangeMin": axis.attrib.get("rangeMin"),
+                    "rangeMax": axis.attrib.get("rangeMax"),
+                    "maxSpeed": float(axis.attrib.get("maxSpeed", 0)),
+                    "maxAccel": float(axis.attrib.get("maxAccel", 0)),
+                    "offset": float(axis.attrib.get("offset", 0)),
+                    "sign": int(axis.attrib.get("sign", 1)),
+                    "q0": float(axis.attrib.get("q0", 0)),
+                    "dh": None,
+                    "dh_note": None,
+                }
+                dh_el = axis.find("DH")
+                if dh_el is not None and dh_el.text:
+                    axis_data["dh"] = [v.strip() for v in dh_el.text.strip("[]").split(",")]
+                    axis_data["dh_note"] = dh_el.attrib.get("note")
+
+                robot["axes"].append(axis_data)
+
+            # --- separate robots vs manipulators ---
+            if robot["manufacturer"] == "None":
+                self.manipulators[robot["name"]] = robot
+            else:
+                self.robots[robot["name"]] = robot
+        self.populateKinematicsCombobox()
+
+
+    def populateKinematicsCombobox(self):
+        robot_btn_check_state = self.form.RobotButton.isChecked()
+        combo_box = self.form.KinematicsComboBox
+        combo_box.clear()
+
+        if robot_btn_check_state:
+            for name, data in self.robots.items():
+                combo_box.addItem(name, data)
+
+            self.form.KinematicsComboBox.setPlaceholderText("Select a robot...")
+            self.form.AddKinematic.show()
+        else:
+            for name, data in self.manipulators.items():
+                combo_box.addItem(name, data)
+            self.form.KinematicsComboBox.setPlaceholderText("Select a manipulator...")
+            self.form.KinematicDetailsFrame.hide()
+
+        self.form.KinematicsComboBox.show()
+        self.form.KinematicsComboBoxLabel.show()
 
     def loadSensorUnits(self):
         sensor_unit_path = os.path.join(self.loc, "Data\\sensor_unit.xml")
@@ -148,10 +258,14 @@ class SurfSensePanel(QtWidgets.QWidget):
         if sender is self.form.RobotButton:
             self.form.ManipulatorButton.setChecked(False)
             self.surf_sense.setReflectionAbility("Robot")
+            # self.form.AddKinematic.show()
 
         elif sender is self.form.ManipulatorButton:
             self.form.RobotButton.setChecked(False)
             self.surf_sense.setReflectionAbility("Manipulator")
+            # self.form.AddKinematic.hide()
+
+        self.populateKinematicsCombobox()
         
 
     def eventFilter(self, obj, event):
@@ -564,8 +678,58 @@ class SurfSensePanel(QtWidgets.QWidget):
 
         self.surf_sense.setSensor(data)
         self.surf_sense.setNumberOfSensors(number_of_sensor)
-        print(vars(self.surf_sense))
+               
+        sensor_widget = self.sensor_widget
+        self.form.ExtraLayout.addWidget(sensor_widget)
+        self.form.toolBox.hide()
+        
+        sensor_widget.show()
+        list_widget = sensor_widget.MeasurementsSummaryList
+        measurements = self.surf_sense.getMeasurements()
+        for obj in measurements:
+            self.new_measure.addListItemWithToListWidget(list_widget, obj.name, obj.id)
+        
+        combo_box = self.form.SensorCombobox
+        index = combo_box.currentIndex()
+        data = combo_box.itemData(index)
+        manufacturer = data.get('manufacturer')
+        series = data.get('series')
+        self.sensor_widget.SelectedSensorLabel.setText(f"{manufacturer} {series}")
+        
+        sensor_data = self.findSensorByManufacturerAndSeries(manufacturer, series)
+        if sensor_data is not None:
+            sensor_dict = self.sensorElementToDict(sensor_data)
+            # print(sensor_dict)
+            res_xy_far = self.safeToFloat(sensor_dict.get("Resolution_XY_FAR", 0.0))
+            res_z_far = self.safeToFloat(sensor_dict.get("Resolution_Z_FAR", 0.0))
+            # print(f"res_xy_far: {res_xy_far}")
+            res_xy_far_in_mm = res_xy_far * SurfSensePanel.MICROMETERTOMM if self.sensor_unit["Resolution_XY_FAR"] == "µm" else res_xy_far
+            self.sensor_widget.NewResolution.setText(str(res_xy_far_in_mm))
 
+
+    def populateKinematicDetails(self, data):
+        """
+        data: list of (label_text, value_text) tuples
+        Example: [("Manufacturer", "KUKA"), ("Axes", "6")]
+        """
+        layout = self.form.KinematicDetail_gridLayout
+
+        # Clear previous widgets in the layout
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        # Add new rows
+        for row, (label_text, value_text) in enumerate(data):
+            label = QtWidgets.QLabel(label_text)
+            value = QtWidgets.QLabel(value_text)
+
+            layout.addWidget(label, row, 0)
+            layout.addWidget(value, row, 1)
+
+        self.form.KinematicDetailsFrame.show()
 
     def getRadiusFromSelection(self):
         try:
@@ -719,3 +883,9 @@ class DocObserver:
                             parent_widget.remove_self(False)
                 else:
                     print(f"Something went wrong {surf_sense_id}")
+
+
+    def slotDeletedDocument(self, doc):
+        objs = doc.Objects
+        for obj in objs:
+            self.slotDeletedObject(obj)

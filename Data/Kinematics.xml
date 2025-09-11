@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<KinematicsData>
+<Kinematics name="KUKA KR6 R700-2" Type="Robot" Manuf="KUKA" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="6.8" MaxReach="726">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-170" rangeMax="170" maxSpeed="360" maxAccel="1619" offset="0" sign="-1" q0="0">
+                <DH>[25, -90, 400, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-190" rangeMax="45" maxSpeed="300" maxAccel="3108" offset="0" sign="1" q0="-90">
+                <DH>[335, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-120" rangeMax="156" maxSpeed="360" maxAccel="2131" offset="90" sign="1" q0="90">
+                <DH>[-25, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-185" rangeMax="185" maxSpeed="450" maxAccel="7368" offset="0" sign="-1" q0="0">
+                <DH>[0, -90, 365, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-120" rangeMax="120" maxSpeed="450" maxAccel="6086" offset="0" sign="1" q0="0">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-350" rangeMax="350" maxSpeed="540" maxAccel="11842" offset="0" sign="-1" q0="0">
+                <DH>[0, 0, 90, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="KUKA KR10 R900-2" Type="Robot" Manuf="KUKA" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="11.3" MaxReach="901">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-170" rangeMax="170" maxSpeed="300" maxAccel="1619" offset="0" sign="-1" q0="0">
+                <DH>[25, -90, 400, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-190" rangeMax="45" maxSpeed="225" maxAccel="3108" offset="0" sign="1" q0="-90">
+                <DH>[455, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-120" rangeMax="156" maxSpeed="330" maxAccel="2131" offset="90" sign="1" q0="90">
+                <DH>[-25, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-185" rangeMax="185" maxSpeed="360" maxAccel="7368" offset="0" sign="-1" q0="0">
+                <DH>[0, -90, 420, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-120" rangeMax="120" maxSpeed="360" maxAccel="6086" offset="0" sign="1" q0="0">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-350" rangeMax="350" maxSpeed="433" maxAccel="11842" offset="0" sign="-1" q0="0">
+                <DH>[0, 0, 90, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="KUKA LBR IISY 3 R760" Type="Robot" Manuf="KUKA" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="3.34" MaxReach="760">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-185" rangeMax="185" maxSpeed="200" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH>[0, -90, 215, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-230" rangeMax="50" maxSpeed="200" maxAccel="3108" offset="0" sign="1" q0="-90">
+                <DH>[300, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-150" rangeMax="150" maxSpeed="200" maxAccel="2131" offset="90" sign="1" q0="90">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-175" rangeMax="175" maxSpeed="300" maxAccel="7368" offset="0" sign="-1" q0="0">
+                <DH>[0, -90, 300, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-110" rangeMax="110" maxSpeed="300" maxAccel="6086" offset="0" sign="1" q0="0">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-220" rangeMax="220" maxSpeed="400" maxAccel="11842" offset="0" sign="-1" q0="0">
+                <DH>[0, 0, 160.5, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="FANUC ER-4[i]A  (LR Mate 200iD/4S)" Type="Robot" Manuf="FANUC" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="4" MaxReach="550">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-170" rangeMax="170" maxSpeed="460" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH>[0, -90, 330, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-65" rangeMax="140" maxSpeed="360" maxAccel="3108" offset="-90" sign="1" q0="0">
+                <DH>[260, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-72" rangeMax="210" maxSpeed="520" maxAccel="2131" offset="180" sign="-1" q0="0">
+                <DH>[-20, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-190" rangeMax="190" maxSpeed="560" maxAccel="7368" offset="0" sign="-1" q0="0">
+                <DH>[0, -90, 290, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-125" rangeMax="125" maxSpeed="560" maxAccel="6086" offset="0" sign="-1" q0="-5">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-360" rangeMax="360" maxSpeed="900" maxAccel="11842" offset="180" sign="-1" q0="0">
+                <DH>[0, 0, 70, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="FANUC LR Mate 200iD 7L" Type="Robot" Manuf="FANUC" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="7" MaxReach="911">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-170" rangeMax="170" maxSpeed="370" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH>[50, -90, 330, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-65" rangeMax="140" maxSpeed="310" maxAccel="3108" offset="-90" sign="1" q0="0">
+                <DH>[440, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-72" rangeMax="210" maxSpeed="410" maxAccel="2131" offset="180" sign="-1" q0="0">
+                <DH>[-35, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-190" rangeMax="190" maxSpeed="550" maxAccel="7368" offset="0" sign="-1" q0="0">
+                <DH>[0, -90, 420, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-125" rangeMax="125" maxSpeed="545" maxAccel="6086" offset="0" sign="-1" q0="-5">
+                <DH>[0, 90, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-360" rangeMax="360" maxSpeed="1000" maxAccel="11842" offset="180" sign="-1" q0="0">
+                <DH>[0, 0, 80, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="Universal UR5e" Type="Robot" Manuf="UNIVERSAL" MaxPathSpeed="2" MaxPathAccel="2" MaxLoad="5" MaxReach="850">
+        <Axis name="Axis1" reference="0" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH>[0, 90, 162.5, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="3108" offset="0" sign="1" q0="-90">
+                <DH>[-425, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="2131" offset="0" sign="1" q0="-90">
+                <DH>[-392.2, 0, 0, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="7368" offset="0" sign="1" q0="-90">
+                <DH>[0, 90, 133, 0]</DH>
+        </Axis>
+        <Axis name="Axis5" reference="Axis4" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="6086" offset="0" sign="1" q0="0">
+                <DH>[0, -90, 99.7, 0]</DH>
+        </Axis>
+        <Axis name="Axis6" reference="Axis5" type="R" rangeMin="-360" rangeMax="360" maxSpeed="180" maxAccel="11842" offset="0" sign="1" q0="0">
+                <DH>[0, 0, 99.9, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="R-1" Type="Manipulator" Manuf="None" MaxPathSpeed="2" MaxPathAccel="2">
+        <params>
+                <param note="bázis és a TCP síkjának távolsága">d1</param>
+                <param>Ax1min</param>
+				<param>Ax1max</param>
+        </params>
+		<Axis name="Axis1" reference="0" type="R" rangeMin="Ax1min" rangeMax="Ax1max" maxSpeed="200" maxAccel="1621" offset="0" sign="1" q0="0">
+                <DH note="q=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, 0, d1, q]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="T-1" Type="Manipulator" Manuf="None" MaxPathSpeed="2" MaxPathAccel="2">
+        <params>
+                <param note="bázis és a TCP síkjának távolsága">d1</param>
+                <param>Ax1min</param>
+				<param>Ax1max</param>
+        </params>
+		<Axis name="Axis1" reference="0" type="P" rangeMin="Ax1min" rangeMax="Ax1max" maxSpeed="200" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, 0, d1+d, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="TT-1" Type="Manipulator" Manuf="None" MaxPathSpeed="2" MaxPathAccel="2">
+        <params>
+                <param note="bázis és a TCP síkjának távolsága">d1</param>
+                <param>Ax1min</param>
+				<param>Ax1max</param>
+				<param note="bázis és a TCP síkjának távolsága">d2</param>
+				<param note="két kitérő tengely legkisebb távolsága">a2</param>
+                <param>Ax2min</param>
+				<param>Ax2max</param>
+        </params>
+		<Axis name="Axis1" reference="0" type="P" rangeMin="Ax1min" rangeMax="Ax1max" maxSpeed="200" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, -90, d1+d, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="P" rangeMin="Ax2min" rangeMax="Ax2max" maxSpeed="200" maxAccel="2000" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[a2, 90, d2+d, 0]</DH>
+        </Axis>
+</Kinematics>
+<Kinematics name="TTTR-1" Type="Manipulator" Manuf="None" MaxPathSpeed="2" MaxPathAccel="2">
+        <params>
+                <param note="bázis és a TCP síkjának távolsága">d1</param>
+                <param>Ax1min</param>
+				<param>Ax1max</param>
+				<param note="bázis és a TCP síkjának távolsága">d2</param>
+				<param note="két kitérő tengely legkisebb távolsága">a2</param>
+                <param>Ax2min</param>
+				<param>Ax2max</param>
+				<param>Ax3min</param>
+				<param>Ax3max</param>
+				<param>Ax4min</param>
+				<param>Ax4max</param>
+        </params>
+        <Axis name="Axis1" reference="0" type="P" rangeMin="Ax1min" rangeMax="Ax1max" maxSpeed="200" maxAccel="1619" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, -90, d1+d, 0]</DH>
+        </Axis>
+        <Axis name="Axis2" reference="Axis1" type="P" rangeMin="Ax2min" rangeMax="Ax2max" maxSpeed="200" maxAccel="2000" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, 90, 500, 0]</DH>
+        </Axis>
+        <Axis name="Axis3" reference="Axis2" type="P" rangeMin="0" rangeMax="250" maxSpeed="200" maxAccel="2000" offset="0" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, 0, 250, 0]</DH>
+        </Axis>
+        <Axis name="Axis4" reference="Axis3" type="R" rangeMin="-360" rangeMax="360" maxSpeed="200" maxAccel="2000" offset="180" sign="1" q0="0">
+                <DH note="d=q0 csak későbbiekben hasznos lehet ha már így adjuk meg">[0, 0, 50, 0]</DH>
+        </Axis>
+</Kinematics>
+</KinematicsData>
