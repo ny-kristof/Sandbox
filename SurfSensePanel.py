@@ -749,6 +749,10 @@ class SurfSensePanel(QtWidgets.QWidget):
                 curve = shape.Curve
                 if curve.TypeId == 'Part::GeomCircle':
                     return curve.Radius
+                potCircle = self.bsplineEdgeIsCircle(shape)
+                if potCircle is not None:
+                    radius, center = potCircle
+                    return radius
                 else:
                     print("Edge is not a circle")
                     return None
@@ -773,6 +777,73 @@ class SurfSensePanel(QtWidgets.QWidget):
             print("Error while computing radius:", e)
 
         return None
+    
+    def bsplineEdgeIsCircle(self, edge, samples=10, rel_tol=1e-3, abs_tol=1e-4):
+        """
+        Check if a BSpline edge is actually a circular arc by testing curvature constancy.
+        Returns (radius: float, center: App.Vector) if circular, otherwise None.
+        """
+        # Basic guards
+        if edge is None or not hasattr(edge, "Curve"):
+            return None
+
+        curve = edge.Curve
+        try:
+            is_bspline = getattr(curve, "TypeId", "") == "Part::GeomBSplineCurve"
+        except Exception:
+            is_bspline = False
+
+        if not is_bspline:
+            return None
+
+        # Use discretize to get points along the curve
+        try:
+            points = edge.discretize(samples)
+            if len(points) < 3:
+                return None
+        except Exception:
+            return None
+
+        # Calculate curvature at 10 evenly spaced points
+        curvatures = []
+        param_range = edge.LastParameter - edge.FirstParameter
+        
+        for i in range(samples):
+            param = edge.FirstParameter + (i / (samples - 1)) * param_range
+            try:
+                curvature = curve.curvature(param)
+                curvatures.append(curvature)
+            except Exception:
+                return None
+
+        if not curvatures:
+            return None
+
+        # Check if all curvatures are within tolerance
+        avg_curvature = sum(curvatures) / len(curvatures)
+        if avg_curvature == 0.0:
+            return None
+            
+        for curvature in curvatures:
+            if abs(curvature - avg_curvature) / avg_curvature > rel_tol:
+                return None
+
+        # Calculate radius from average curvature
+        radius = 1.0 / avg_curvature
+        
+        # Calculate center using three well-spaced points
+        n = len(points)
+        pA = points[int(0.1 * n)]
+        pB = points[int(0.5 * n)]
+        pC = points[int(0.9 * n)]
+        
+        try:
+            circ = Part.Circle(pA, pB, pC)
+            center = circ.Center
+        except Exception:
+            return None
+
+        return (radius, center)
 
 
 class SurfSenseSelObserver:
