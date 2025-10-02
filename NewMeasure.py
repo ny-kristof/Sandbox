@@ -3,9 +3,10 @@ from pathlib import Path
 import FreeCADGui as Gui
 import FreeCAD as App
 from PySide import QtGui, QtCore, QtWidgets
-from SurfSense import MeasurementData
+from SurfSense import SurfSense, MeasurementData
 import CSExporter
 import xml.etree.ElementTree as ET
+from Utils import getListItemWidgetByID
 
 class NewMeasure:
     #TODO separate connections and ui setup
@@ -16,13 +17,16 @@ class NewMeasure:
         self.form = Gui.PySideUic.loadUi(path)
         self.list_widget = self.form.MeasurementsList
         self.current_tolerance = {}
+        self.tolerance_type = None
+        self.is_measurement_editing = False
+        self.current_edited_measurement_id = -1
 
         self.form.MeasureCancelBtn.clicked.connect(lambda: self.parent.closeMeasureWidget(self.form))
         self.form.MeasureBtn.clicked.connect(self.runMeasurement)
         self.form.ToleranceLabel.hide()
         self.form.MeasureDetailsWidget.hide()
         self.form.MeasureBtn.setEnabled(False)
-        self.form.unitLineEdit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.unitLineEdit.text(), self.form.unitLineEdit))
+        self.form.ULToleranceLimit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.ULToleranceLimit.text(), self.form.ULToleranceLimit))
         self.form.UpperToleranceLimit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.UpperToleranceLimit.text(), self.form.UpperToleranceLimit))
         self.form.LowerToleranceLimit.editingFinished.connect(lambda: self.handleToleranceChange(self.form.LowerToleranceLimit.text(), self.form.LowerToleranceLimit))
         self.form.MeasureTypeCombobox.currentIndexChanged.connect(lambda: self.handleMeasureTypeChange())
@@ -37,12 +41,14 @@ class NewMeasure:
         plus_less_icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_less.svg")).pixmap(QtCore.QSize(20,20))
         self.form.PlusLessLabel.setPixmap(plus_less_icon)
         info_icon = QtGui.QIcon(os.path.join(self.loc, "icons\\info.svg")).pixmap(QtCore.QSize(20,20))
-        self.form.InfoLabel1.setPixmap(info_icon)
-        self.form.InfoLabel2.setPixmap(info_icon)
-        self.form.InfoLabel1.setToolTip("tooltip here...")
-        self.form.InfoLabel2.setToolTip("tooltip here...")
-        self.form.ExportWholePartBtn.clicked.connect(self.handleWholePartBtnClick)
-        self.form.ExportCoordinateSystemBtn.clicked.connect(lambda: CSExporter.add_selected_LCS_to_xml(self.parent.selection_planner.root_node))
+        self.parent.form.InfoLabel1.setPixmap(info_icon)
+        self.parent.form.InfoLabel2.setPixmap(info_icon)
+        self.parent.form.InfoLabel1.setToolTip("tooltip here...")
+        self.parent.form.InfoLabel2.setToolTip("tooltip here...")
+        self.parent.form.ExportWholePartBtn.clicked.connect(self.handleWholePartBtnClick)
+        self.parent.form.ExportCoordinateSystemBtn.clicked.connect(lambda: CSExporter.add_selected_LCS_to_xml(self.parent.selection_planner.root_node))
+        self.form.MeasurementNameLabel.hide()
+        self.form.MeasurementName.hide()
         self.initializeGeneralTolerancesCombobox()
         
 
@@ -177,7 +183,7 @@ class NewMeasure:
             self.form.MeasureBtn.setEnabled(True)
             self.form.MeasureBtn.setToolTip("")
         else:
-            if self.form.DoubleEditContainer.isVisible() is True:
+            if self.tolerance_type == "size":
                 self.form.MeasureBtn.setEnabled(False)
                 self.form.MeasureBtn.setToolTip("Invalid tolerances")
         upper_input.blockSignals(False)
@@ -249,12 +255,14 @@ class NewMeasure:
             combo_box.setIconSize(QtCore.QSize(25, 25))
         
         
-    def handleMeasurementHistory(self, measurement_widget):
+    def handleMeasurementHistory(self, measurement_widget, label):
         measurements = self.parent.surf_sense.getMeasurements()
         if len(measurements) == 0:
             measurement_widget.hide()
+            label.hide()
         else:
             measurement_widget.show()
+            label.show()
 
 
     def handleToleranceChange(self, value, edit):
@@ -288,7 +296,7 @@ class NewMeasure:
                 except ValueError:
                     edit.setText(str(prev_lower_tolerance))
                 return
-            case "unitLineEdit":
+            case "ULToleranceLimit":
                 try:
                     val = float(value)
                     if val < 0:
@@ -305,19 +313,23 @@ class NewMeasure:
                 return
 
 
-    #TODO App.Gui.getLocale() to get the app language and update measurements.json
+
     def handleMeasureTypeChange(self):
         combo_box = self.form.MeasureTypeCombobox
         index = combo_box.currentIndex()
         data = combo_box.itemData(index)
-
+        
         if combo_box.currentIndex() != -1:
+            measurement_type = data.get("name")
             tolerance_type = data.get("type")
             self.showRelatedToleranceInput(tolerance_type)
+            #TODO If user change the measuremnt type, is it still an update or a new measurement?
+            if self.is_measurement_editing == False:
+                self.updateMeasurementName(measurement_type)
             self.form.MeasureDetailsWidget.show()
             self.form.ToleranceLabel.show()
             (lower_tolerance, upper_tolerance) = self.parent.surf_sense.getBaseTolerance()
-            if self.form.DoubleEditContainer.isVisible() is True:
+            if self.tolerance_type == "size":
                 if self.form.UpperToleranceLimit.text() == "-" or self.form.LowerToleranceLimit.text() == "-":
                     self.form.MeasureBtn.setEnabled(False)
                     self.form.MeasureBtn.setToolTip("Invalid tolerances")
@@ -329,22 +341,45 @@ class NewMeasure:
                 new_lower_tolerance = -upper_tolerance if upper_tolerance > 0 else upper_tolerance
                 self.parent.surf_sense.setBaseTolerance("upper", abs(upper_tolerance))
                 self.parent.surf_sense.setBaseTolerance("lower", new_lower_tolerance)
-                self.form.unitLineEdit.setText(str(abs(upper_tolerance)))
+                self.form.ULToleranceLimit.setText(str(abs(upper_tolerance)))
                 self.form.MeasureBtn.setToolTip("")
                 self.form.MeasureBtn.setEnabled(True)
 
 
+    def updateMeasurementName(self, measure_type):
+        measurement_id = self.parent._measurement_count + 1
+        name = f"Measurement-{measurement_id}: {measure_type}"
+        self.form.MeasurementName.setText(name)
+        if self.form.MeasurementNameLabel.isHidden():
+            self.form.MeasurementNameLabel.show()
+            self.form.MeasurementName.show()
+
     def showRelatedToleranceInput(self, tolerance_type):
+        self.tolerance_type = tolerance_type
         match tolerance_type:
             case "size":
-                self.form.DoubleEditContainer.show()
+                self.form.UpperLabel.show()
+                self.form.UpperToleranceLimit.show()
+                self.form.UpperUnitLabel.show()
+                self.form.LowerLabel.show()
+                self.form.LowerToleranceLimit.show()
+                self.form.LowerUnitLabel.show()
                 self.form.GeneralTolerancesframe.show()
-                self.form.SignalEditContainer.hide()
+                self.form.PlusLessLabel.hide()
+                self.form.ULToleranceLimit.hide()
+                self.form.ULToleranceUnit.hide()
                 return
             case "tolerance":
-                self.form.DoubleEditContainer.hide()
+                self.form.UpperLabel.hide()
+                self.form.UpperToleranceLimit.hide()
+                self.form.UpperUnitLabel.hide()
+                self.form.LowerLabel.hide()
+                self.form.LowerToleranceLimit.hide()
+                self.form.LowerUnitLabel.hide()
                 self.form.GeneralTolerancesframe.hide()
-                self.form.SignalEditContainer.show()
+                self.form.PlusLessLabel.show()
+                self.form.ULToleranceLimit.show()
+                self.form.ULToleranceUnit.show()
                 return
             case _:
                 App.Console.PrintWarning("Unexpected tolerance type")
@@ -357,27 +392,59 @@ class NewMeasure:
             App.Console.PrintWarning("Selection is empty")
             return
         combo_box = self.form.MeasureTypeCombobox
-        
         for current_sel in sel:
+            selected_element_list = []
+            for elem in current_sel.SubElementNames:
+                selected_element_list.append(f"{current_sel.ObjectName}.{elem}")
             selected_value = combo_box.itemData(combo_box.currentIndex())
             m_type = selected_value.get("name")
             (lower_tolerance, upper_tolerance) = self.parent.surf_sense.getBaseTolerance()
             m_unit = self.form.LowerUnitLabel.text()
             m_document_name = App.ActiveDocument.Label
-            m_object_list = current_sel.SubElementNames
-            m_object_name = current_sel.ObjectName
+            m_object_list = selected_element_list
+            m_object_name = self.getTopLevelName(current_sel)
             m_sampling_rate = self.form.SamplingRate.value()
+            m_name = self.form.MeasurementName.text()
 
-            data = MeasurementData(m_type, lower_tolerance, upper_tolerance, m_unit, m_object_list, 0, m_document_name, m_sampling_rate, m_object_name)
-            measurement = self.parent.selection_planner.getElementsFromSelection()
+            if self.is_measurement_editing == False:
+                data = MeasurementData(m_type, lower_tolerance, upper_tolerance, m_unit, m_object_list, 0, m_document_name, m_sampling_rate, m_name, m_object_name)
+                measurement = self.parent.selection_planner.getElementsFromSelection(m_name, data.id)
+            else:
+                self.parent.selection_planner.removeMeasurementNode(self.current_edited_measurement_id)
+                list_widget_item = getListItemWidgetByID(self.current_edited_measurement_id)
+                if list_widget_item:
+                    list_widget_item.remove_self()
+                data = MeasurementData(m_type, lower_tolerance, upper_tolerance, m_unit, m_object_list, 0, m_document_name, m_sampling_rate, m_name, m_object_name, self.current_edited_measurement_id)
+                measurement = self.parent.selection_planner.getElementsFromSelection(m_name, self.current_edited_measurement_id)
             data.measurement = measurement
             self.parent.surf_sense.addMeasurementToList(data)
-
+            
             self.addMeasurementToHistory(data)
+            self.setSelfMeasrurementEditingState()
             self.handleMeasurementUIItems()
+            self.updateMeasurementName(m_type)
+            self.parent.populateSensorComboBox()
+            
 
-        self.parent.populateSensorComboBox()
+    def getTopLevelName(self, sel):
+        obj = sel.Object
+        if not obj:
+            return None
 
+        parent = obj.getParentGeoFeatureGroup()
+        if parent:
+            return parent.Name
+        return obj.Name         # fallback if no parent
+
+    def getSelectedTopLevelNames(self):
+        selection = Gui.Selection.getSelectionEx()
+        names = []
+        for sel in selection:
+            name = self.getTopLevelName(sel)
+            if name:
+                names.append(name)
+        return names
+    
 
     def addMeasurementToHistory(self, data):
         # list_count = self.list_widget.count()
@@ -422,8 +489,9 @@ class NewMeasure:
 
         
     def addListItemWithToListWidget(self, target_list_widget, text, measurement_id):
+        from ListItemWidget import ListItemWidget
         item = QtWidgets.QListWidgetItem()
-        widget = ListItemWidget(text, target_list_widget, self.loc, measurement_id)
+        widget = ListItemWidget(text, target_list_widget, self.loc, measurement_id, self.parent)
 
         # TODO handle clearselection if a selected item is deleted (if it's needed)
         widget.itemRemoved.connect(self.parent.surf_sense.removeMeasurement)
@@ -431,7 +499,16 @@ class NewMeasure:
         widget.itemRemoved.connect(self.parent.selection_planner.removeMeasurementNode)
 
         item.setSizeHint(widget.sizeHint())
-        target_list_widget.addItem(item)
+        insert_row = target_list_widget.count()
+        for i in range(target_list_widget.count()):
+            existing_item = target_list_widget.item(i)
+            existing_widget = target_list_widget.itemWidget(existing_item)
+            existing_id = existing_widget.measurement_id
+            if measurement_id < existing_id:
+                insert_row = i
+                break
+
+        target_list_widget.insertItem(insert_row, item)
         target_list_widget.setItemWidget(item, widget)
                 
 
@@ -442,8 +519,8 @@ class NewMeasure:
 
 
     def handleMeasurementUIItems(self, id=0):
-        self.handleMeasurementHistory(self.form.Measurements)
-        self.handleMeasurementHistory(self.parent.form.Measurements)
+        self.handleMeasurementHistory(self.form.Measurements, self.form.MeasurementsListLabel)
+        self.handleMeasurementHistory(self.parent.form.Measurements, self.parent.form.MeasurementsLabel)
         self.parent.handleMeasurementSaveButtonState()
 
     
@@ -457,7 +534,7 @@ class NewMeasure:
         self.parent.surf_sense.setSamplingRate(base_sampling_rate)
         
         if base_tolerance is not None:
-            self.form.unitLineEdit.setText(str(abs(base_tolerance[1])))
+            self.form.ULToleranceLimit.setText(str(abs(base_tolerance[1])))
             self.form.UpperToleranceLimit.setText(str(base_tolerance[1]))
             self.form.LowerToleranceLimit.setText(str(base_tolerance[0]))
 
@@ -468,42 +545,51 @@ class NewMeasure:
         self.form.SearchBox.setText("")
 
 
-class ListItemWidget(QtWidgets.QWidget):
-    from PySide6.QtCore import Signal
-    itemRemoved = Signal(object)
+    def handleMeasurementEdit(self, measurement_data):
+        if measurement_data is None:
+            return
+        self.form.MeasureTypeCombobox.blockSignals(True)
+        index = self.form.MeasureTypeCombobox.findText(measurement_data.measure_type)
+        if index != -1:
+            self.form.MeasureTypeCombobox.setCurrentIndex(index)
+            tolerance_type = self.form.MeasureTypeCombobox.itemData(index).get("type")
+            self.showRelatedToleranceInput(tolerance_type)
+            self.form.MeasureTypeCombobox.blockSignals(False)
 
-    def __init__(self, text, list_widget, loc, measurement_id):
-        super().__init__()
-        self.list_widget = list_widget
-        self.measurement_id = measurement_id
+            self.updateMeasurementName(measurement_data.measure_type)
+            self.form.MeasureDetailsWidget.show()
+            self.form.ToleranceLabel.show()
+            self.form.MeasureBtn.setEnabled(True)
 
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(5, 2, 5, 2)
+            self.form.MeasurementName.setText(measurement_data.name)
 
-        self.label = QtWidgets.QLabel(text)
-        self.label.setObjectName(f"Measurement-{self.measurement_id}")
-        self.button = QtWidgets.QToolButton()
-        icon = QtGui.QIcon(os.path.join(loc, "icons\\close_sign.svg"))
-        self.button.setIcon(icon)
-        self.button.setFixedSize(20, 20)
-        self.button.clicked.connect(lambda: self.remove_self(True))
+            self.form.SamplingRate.setValue(measurement_data.sampling_rate)
+            self.parent.surf_sense.setSamplingRate(measurement_data.sampling_rate)
 
-        layout.addWidget(self.label)
-        layout.addStretch()
-        layout.addWidget(self.button)
+            if tolerance_type == "tolerance":
+                self.form.ULToleranceLimit.setText(str(abs(measurement_data.upper_tolerance)))
+            else:
+                self.form.UpperToleranceLimit.setText(str(measurement_data.upper_tolerance))
+                self.form.LowerToleranceLimit.setText(str(measurement_data.lower_tolerance))
+                self.parent.surf_sense.setBaseTolerance("upper", measurement_data.upper_tolerance)
+                self.parent.surf_sense.setBaseTolerance("lower", measurement_data.lower_tolerance)
 
-
-    def remove_self(self, from_self = True):
-        surf_sense_id = -1
-        for i in range(self.list_widget.count()):
-            if self.list_widget.itemWidget(self.list_widget.item(i)) == self:
-                surf_sense_id = self.measurement_id
-                self.list_widget.takeItem(i)
-                break
+            # Select the associated objects in the 3D view
+            Gui.Selection.clearSelection()
+            for obj in measurement_data.object_list:
+                # print("measurement_data.object_name: ", measurement_data.object_name)
+                Gui.Selection.addSelection(measurement_data.doc_name, measurement_data.object_name, obj)
+        else:
+            self.form.MeasureTypeCombobox.blockSignals(False)
+            self.setSelfMeasrurementEditingState()
+            App.Console.PrintWarning(f"Could not find measurement type: {measurement_data.measure_type}")
         
-        self.itemRemoved.emit(self.measurement_id)
-        if from_self:
-            for obj in App.ActiveDocument.Objects:
-                if hasattr(obj, "SurfSenseID"):
-                    if obj.SurfSenseID == surf_sense_id:
-                        App.ActiveDocument.removeObject(obj.Name)
+
+    def setSelfMeasrurementEditingState(self, id = -1):
+        if id != -1:
+            self.is_measurement_editing = True
+            self.current_edited_measurement_id = id
+        else:
+            self.is_measurement_editing = False
+            self.current_edited_measurement_id = -1
+

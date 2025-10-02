@@ -102,9 +102,12 @@ class SurfSense:
 
 
 class MeasurementData:
-    def __init__(self, measure_type, lower_tolerance, upper_tolerance, unit, object_list, measurement, doc_name, sampling_rate, object_name=None):
-        SurfSensePanel.SurfSensePanel._measurement_count += 1
-        self.id = SurfSensePanel.SurfSensePanel._measurement_count
+    def __init__(self, measure_type, lower_tolerance, upper_tolerance, unit, object_list, measurement, doc_name, sampling_rate, name, object_name, edited_measure_id = None):
+        if edited_measure_id is None:
+            SurfSensePanel.SurfSensePanel._measurement_count += 1
+            self.id = SurfSensePanel.SurfSensePanel._measurement_count
+        else:
+            self.id = edited_measure_id
         self.measure_type = measure_type
         self.lower_tolerance = lower_tolerance
         self.upper_tolerance = upper_tolerance
@@ -114,7 +117,7 @@ class MeasurementData:
         self.doc_name = doc_name
         self.object_name = object_name
         self.sampling_rate = sampling_rate
-        self.name = f"Measurement-{self.id}: {self.measure_type} | {self.measurement} {self.unit}"
+        self.name = name
 
 
     def setMeasurementName(self, new_name):

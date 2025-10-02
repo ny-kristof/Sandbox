@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>387</width>
-    <height>635</height>
+    <height>639</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -198,7 +198,7 @@
          <item row="0" column="3">
           <widget class="QLabel" name="label_12">
            <property name="text">
-            <string>mm</string>
+            <string>  mm</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -275,7 +275,7 @@
          <item row="1" column="3">
           <widget class="QLabel" name="label_14">
            <property name="text">
-            <string>mm</string>
+            <string>  mm</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -666,13 +666,6 @@ font-weight: bold;
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Measurements:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QListWidget" name="MeasurementsSummaryList">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -755,6 +748,18 @@ font-weight: bold;
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="MeasurementSummaryLabel">
+     <property name="styleSheet">
+      <string notr="true">QLabel{
+	border-bottom: 1px solid black;
+}</string>
+     </property>
+     <property name="text">
+      <string>Measurements:</string>
+     </property>
     </widget>
    </item>
   </layout>

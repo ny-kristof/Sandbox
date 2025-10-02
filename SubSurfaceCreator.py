@@ -39,19 +39,19 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
     circle_wire.Placement = App.Placement(start_point, App.Rotation(App.Vector(0,0,1), tangent))
     profile = doc.addObject("Part::Feature","MyCircle")
     profile.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    profile.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    profile.SurfSenseID = measurement_group.SurfSenseID
     profile.Shape=circle_wire
 
     # Create the spine of the sweep that is the selected edge
     spine=doc.addObject("Part::Feature","Spine")
     spine.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    spine.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    spine.SurfSenseID = measurement_group.SurfSenseID
     spine.Shape=path_edge
 
     # Create the sweep object and the end spheres
     sweep = doc.addObject('Part::Sweep','Sweep')
     sweep.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    sweep.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    sweep.SurfSenseID = measurement_group.SurfSenseID
     sweep.Sections=[profile]
     sweep.Spine=spine
     sweep.Solid=True
@@ -61,7 +61,7 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
     if aroundVertex:
         endSphere1 = doc.addObject("Part::Sphere","EndSphere1")
         endSphere1.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        endSphere1.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+        endSphere1.SurfSenseID = measurement_group.SurfSenseID
         endSphere1.Label = "EndSphere1"
         endSphere1.Radius = radius
         endSphere1.Placement = App.Placement(start_point, App.Rotation())
@@ -69,7 +69,7 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
         
         endSphere2 = doc.addObject("Part::Sphere","EndSphere2")
         endSphere2.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        endSphere2.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+        endSphere2.SurfSenseID = measurement_group.SurfSenseID
         endSphere2.Label = "EndSphere2"
         endSphere2.Radius = radius
         endSphere2.Placement = App.Placement(end_point, App.Rotation())
@@ -91,7 +91,7 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
     doc.recompute()
     mycommon = doc.addObject("Part::Feature", "MyCommon")
     mycommon.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    mycommon.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    mycommon.SurfSenseID = measurement_group.SurfSenseID
     mycommon.Shape = common.Shape
 
     doc.removeObject(common.Label)
@@ -108,7 +108,7 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
     edgeOnCommon = findEdgeOnObject(mycommon.Shape, path_edge)
     edgeOnCommon_obj = doc.addObject("Part::Feature", "EdgeOnCommon")
     edgeOnCommon_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    edgeOnCommon_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    edgeOnCommon_obj.SurfSenseID = measurement_group.SurfSenseID
     edgeOnCommon_obj.Shape = edgeOnCommon
     bool_frag = createBoolFragment([edgeOnCommon_obj, mycommon])
     doc.recompute()
@@ -230,7 +230,7 @@ def createOffsetToFaces(faces, measurement_group : App.DocumentObject = None, co
     facesToMeasure = Part.makeShell(faces)
     facesToMeasure_obj = doc.addObject("Part::Feature", "FacesToMeasure")
     facesToMeasure_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-    facesToMeasure_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    facesToMeasure_obj.SurfSenseID = measurement_group.SurfSenseID
     facesToMeasure_obj.Shape = facesToMeasure
     facesToMeasure_obj.ViewObject.ShapeColor = color  # red
     if global_placement is not None:
@@ -243,7 +243,7 @@ def createOffsetToFaces(faces, measurement_group : App.DocumentObject = None, co
         doc.openTransaction("Create Offset Object")
         offset = doc.addObject("Part::Offset", "FacesToMeasureOffset")
         offset.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        offset.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+        offset.SurfSenseID = measurement_group.SurfSenseID
         offset.Source = facesToMeasure_obj
         offset.Value = offset_value
         # offset_shape = facesToMeasure_obj.Shape.makeOffsetShape(offset_value, 0.01)
@@ -406,7 +406,7 @@ def sample_surface_by_spacing(face, spacing_mm = 1.0, measurement_group : App.Do
         normal_lines = Part.Compound(lines)
         normals_obj = App.ActiveDocument.addObject("Part::Feature", "NormalLines")
         normals_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        normals_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+        normals_obj.SurfSenseID = measurement_group.SurfSenseID
         normals_obj.Shape = normal_lines
         if measurement_group is not None:
             measurement_group.addObject(normals_obj)

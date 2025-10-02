@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets
+from PySide import QtWidgets
 from enum import Enum
 import FreeCADGui as Gui
 import FreeCAD as App

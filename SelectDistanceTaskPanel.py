@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets
+from PySide import QtWidgets
 import FreeCADGui
 import FreeCAD
 import Part

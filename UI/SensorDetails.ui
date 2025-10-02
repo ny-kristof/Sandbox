@@ -18,6 +18,7 @@
 	background: #73CDC6;
 	color: black;
 	width: 50px;
+	font-weight: bold;
 }</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -150,7 +151,10 @@
    <item row="0" column="0">
     <widget class="QLabel" name="label_11">
      <property name="text">
-      <string>X</string>
+      <string>X     </string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::TextFormat::AutoText</enum>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>

@@ -9,7 +9,7 @@ import SelectionPlanner
 import NewMeasure
 import CSExporter
 import xml.etree.ElementTree as ET
-from NewMeasure import ListItemWidget
+
 
 
 class SurfSensePanel(QtWidgets.QWidget):
@@ -48,7 +48,7 @@ class SurfSensePanel(QtWidgets.QWidget):
         else:
             self.form.toolBox.setCurrentIndex(0)
         
-        self.new_measure.handleMeasurementHistory(self.form.Measurements)
+        self.new_measure.handleMeasurementHistory(self.form.Measurements, self.form.MeasurementsLabel)
         icon = QtGui.QIcon(os.path.join(self.loc, "icons\\plus_sign.svg"))
         self.form.AddSensor.setIcon(icon)
         self.form.AddKinematic.setIcon(icon)
@@ -213,16 +213,19 @@ class SurfSensePanel(QtWidgets.QWidget):
         measure_widget.show()
         self.new_measure.setupMeasureTypeCombobox()
         self.new_measure.resetMeasurementWidget()
-        self.new_measure.handleMeasurementHistory(measure_widget.Measurements)
+        self.new_measure.handleMeasurementHistory(measure_widget.Measurements, self.new_measure.form.MeasurementsListLabel)
                             
         Gui.Selection.addObserver(self.selObserver)
         self.selObserver.addSelectedItemToSelection()
        
 
     def closeMeasureWidget(self, measure_widget):
+        measure_widget.MeasurementNameLabel.hide()
+        measure_widget.MeasurementName.hide()
         self.form.ExtraLayout.removeWidget(measure_widget)
         measure_widget.hide()
         self.form.toolBox.show()
+        self.new_measure.setSelfMeasrurementEditingState()
         Gui.Selection.removeObserver(self.selObserver)
 
 
@@ -270,7 +273,8 @@ class SurfSensePanel(QtWidgets.QWidget):
 
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.MouseButtonPress and event.button() == QtCore.Qt.LeftButton:
-            pos = event.globalPosition().toPoint()  # For PySide6
+            # pos = event.globalPosition().toPoint()  # For PySide6
+            pos = event.globalPos() #.toPoint()  # For PySide
 
             # Handle self.list_widget
             widget_pos = self.list_widget.mapFromGlobal(pos)
@@ -855,6 +859,7 @@ class SurfSenseSelObserver:
     def __init__(self, parent, m_widget):
         self.measure_widget = m_widget
         self.parent = parent
+        self.selected_parts = []
         # self.list_view = measure_widget.SelectedObjects
         self.model = QtGui.QStandardItemModel()
         # self.list_view.setModel(self.model)
@@ -868,11 +873,15 @@ class SurfSenseSelObserver:
     def addSelection(self,doc,obj,sub,pnt):                                   # Selection object
         # App.Console.PrintMessage("add"+ "\n")
         # App.Console.PrintMessage(str(doc)+ "\n")                              # Name of the document
-        App.Console.PrintMessage(str(obj)+ "\n")                              # Name of the object
-        App.Console.PrintMessage(str(sub)+ "\n")                              # The part of the object name
+        # App.Console.PrintMessage(str(obj)+ "\n")                              # Name of the object
+        # App.Console.PrintMessage(str(sub)+ "\n")                              # The part of the object name
         # App.Console.PrintMessage(str(pnt)+ "\n")                              # Coordinates of the object
         # App.Console.PrintMessage("______"+ "\n")
         # self.addSelectedItemToSelection()
+        self.selected_parts.append(f"{str(obj)}.{str(sub)}")
+        # print("%" * 50)
+        self.getSelectedTopLevelLabels()
+        # print("%" * 50)
         self.handleSelection()
 
 
@@ -892,6 +901,27 @@ class SurfSenseSelObserver:
         #App.Console.PrintMessage("clear"+ "\n")                               # If click on another object, clear the previous object
         self.model.clear()
         self.handleSelection()
+
+
+    def getTopLevelLabel(self, sel):
+        obj = sel.Object
+        if not obj:
+            return None
+
+        parent = obj.getParentGeoFeatureGroup()
+        if parent:
+            return parent.Name
+        return obj.Name 
+
+
+    def getSelectedTopLevelLabels(self):
+        selection = Gui.Selection.getSelectionEx()
+        labels = []
+        for sel in selection:
+            label = self.getTopLevelLabel(sel)
+            if label:
+                labels.append(label)
+        return labels
 
 
     def addSelectedItemToSelection(self, doc=None, obj1=None, sub=None):
@@ -924,8 +954,6 @@ class DocObserver:
         self.parent = parent
 
 
-    def slotActivateDocument(self,doc):
-        print(doc.Name)
 
 
     def slotChangedObject(self, obj, prop):
@@ -938,6 +966,7 @@ class DocObserver:
 
 
     def slotDeletedObject(self, obj):
+        from Utils import getListItemWidgetByID
         if hasattr(obj, "SurfSenseID"):
             surf_sense_id = obj.SurfSenseID
             measurement = self.parent.surf_sense.getMeasurementByID(surf_sense_id)
@@ -945,13 +974,9 @@ class DocObserver:
                 succes = self.parent.surf_sense.removeMeasurement(surf_sense_id)
                 if succes:
                     print(f"Measurement with ID-{surf_sense_id} is removed")
-                    mw = Gui.getMainWindow()
-                    list_item_widget_id = f"Measurement-{surf_sense_id}"
-                    label  = mw.findChild(QtWidgets.QLabel, list_item_widget_id)
-                    if label:
-                        parent_widget = label.parentWidget()
-                        if isinstance(parent_widget, ListItemWidget):
-                            parent_widget.remove_self(False)
+                    list_item_widget = getListItemWidgetByID(surf_sense_id)
+                    if list_item_widget:
+                        list_item_widget.remove_self(False)
                 else:
                     print(f"Something went wrong {surf_sense_id}")
 
