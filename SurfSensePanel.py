@@ -398,19 +398,34 @@ class SurfSensePanel(QtWidgets.QWidget):
             for child in sensor_elem
         }
 
-
     def saveMeasurementsToXML(self):
-        from pathlib import Path       
+        from pathlib import Path
+        
         try:
             documents_dir = Path.home() / "Documents" / "SurfSense"
-            documents_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+            documents_dir.mkdir(parents=True, exist_ok=True)  # Create folder if missing
 
+            # Get the Measurements element
+            measurements_elem = self.selection_planner.root_node.find("Measurements")
+            if measurements_elem is not None:
+                # Sort Measurement elements by SurfSenseID (numerically if possible)
+                sorted_measurements = sorted(
+                    measurements_elem.findall("Measurement"),
+                    key=lambda m: int(m.get("SurfSenseID", "0"))
+                )
+
+                # Clear existing children and re-append in sorted order
+                measurements_elem[:] = sorted_measurements
+
+            # Save XML
             file_path = documents_dir / "measurements.xml"
             tree = ET.ElementTree(self.selection_planner.root_node)
             tree.write(file_path, encoding="utf-8", xml_declaration=True)
-            App.Console.PrintMessage("File saved succesfully")
+
+            App.Console.PrintMessage("File saved successfully\n")
+
         except Exception as e:
-            App.Console.PrintError("Failed to save the measurements")
+            App.Console.PrintError(f"Failed to save the measurements: {e}\n")
 
 
     def populateSensorLegendLabel(self):
