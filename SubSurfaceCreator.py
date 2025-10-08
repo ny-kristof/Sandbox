@@ -58,54 +58,128 @@ def createNeighborSubsurfaces(object, edge, resolution = 0.5, radius = 1.0, arou
     sweep.Frenet=False
     sweep.Transition=2
 
-    if aroundVertex:
-        endSphere1 = doc.addObject("Part::Sphere","EndSphere1")
-        endSphere1.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        endSphere1.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
-        endSphere1.Label = "EndSphere1"
-        endSphere1.Radius = radius
-        endSphere1.Placement = App.Placement(start_point, App.Rotation())
-        print("Start point: ", start_point)
+    if aroundVertex and end_point is not None:
+    #     endSphere1 = doc.addObject("Part::Sphere","EndSphere1")
+    #     endSphere1.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+    #     endSphere1.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    #     endSphere1.Label = "EndSphere1"
+    #     endSphere1.Radius = radius
+    #     endSphere1.Placement = App.Placement(start_point, App.Rotation())
+    #     print("Start point: ", start_point)
         
-        endSphere2 = doc.addObject("Part::Sphere","EndSphere2")
-        endSphere2.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
-        endSphere2.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
-        endSphere2.Label = "EndSphere2"
-        endSphere2.Radius = radius
-        endSphere2.Placement = App.Placement(end_point, App.Rotation())
-        print("End point: ", end_point)
+    #     endSphere2 = doc.addObject("Part::Sphere","EndSphere2")
+    #     endSphere2.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
+    #     endSphere2.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
+    #     endSphere2.Label = "EndSphere2"
+    #     endSphere2.Radius = radius
+    #     endSphere2.Placement = App.Placement(end_point, App.Rotation())
+    #     print("End point: ", end_point)
 
-    # doc.recompute()
+    # # doc.recompute()
 
-        # Create the union of the sweep and the spheres
-        bp = BOPFeatures.BOPFeatures(App.activeDocument())
-        sweepAndSpheres =  bp.make_multi_fuse(["EndSphere1", "Sweep", "EndSphere2", ])
+    #     # Create the union of the sweep and the spheres
+    #     bp = BOPFeatures.BOPFeatures(App.activeDocument())
+    #     try:
+    #         sweepAndSpheres =  bp.make_multi_fuse(["EndSphere1", "Sweep", "EndSphere2", ])
+    #         doc.recompute()
+    #             # Filter out tiny edges before using the shape
+    #         if sweepAndSpheres and sweepAndSpheres.Shape:
+    #             # Get faces and rebuild
+    #             faces = [f for f in sweepAndSpheres.Shape.Faces]
+    #             print(f"Number of faces in fused shape: {len(faces)}")
+    #             print("faces: ", faces)
+    #             try:
+    #                 shell = Part.makeShell(faces)
+    #                 print("Shell is valid: ", shell.isValid())
+    #                 if shell.isValid():
+    #                     print("Rebuilding solid from shell.")
+    #                     solid = Part.makeSolid(shell)
+    #                     sweepAndSpheres.Shape = solid
+    #             except Exception as e:
+    #                 print(f"Could not rebuild solid: {e}")
+    #     except Exception as e:
+    #         print("Error occurred while creating union: ", e)
+    #         doc.removeObject("EndSphere1")
+    #         doc.removeObject("EndSphere2")
+    #         sweepAndSpheres = sweep
+    #         return
+        # Extend the edge by a factor of the radius at both ends
+        extension_length = radius  # Extend by the radius amount
+        
+        # Get direction vectors at both ends
+        start_param = path_edge.FirstParameter
+        end_param = path_edge.LastParameter
+        
+        # Get tangent at start (pointing away from edge)
+        tangent_start = path_edge.tangentAt(start_param).normalize()
+        # Get tangent at end (pointing away from edge)
+        tangent_end = path_edge.tangentAt(end_param).normalize()
+        
+        # Calculate extended points
+        extended_start = start_point.add(tangent_start.multiply(-extension_length))
+        extended_end = end_point.add(tangent_end.multiply(extension_length))
+        
+        # Create extended edge by making lines from extended points
+        edge_start = Part.makeLine(extended_start, start_point)
+        edge_end = Part.makeLine(end_point, extended_end)
+        
+        # Create extended spine as a wire
+        extended_spine_wire = Part.Wire([edge_start, path_edge, edge_end])
+        spine.Shape = extended_spine_wire
+        
+        print("Extended start point: ", extended_start)
+        print("Extended end point: ", extended_end)
+
+        # Create the sweep with extended spine
+        try:
+            doc.recompute()
+            sweepAndSpheres = sweep
+            
+            if not sweepAndSpheres.Shape.isValid():
+                print("Extended sweep shape is invalid")
+                sweepAndSpheres = sweep
+                return
+                
+        except Exception as e:
+            print("Error occurred while creating extended sweep: ", e)
+            sweepAndSpheres = sweep
+            return
     else:
         sweepAndSpheres = sweep
-    
-    print("Selection object: ", object.Name)
-    print("Sweep object: ", sweepAndSpheres.Label)
+
     doc.recompute()
-    bp = BOPFeatures.BOPFeatures(App.activeDocument())
-    common = bp.make_multi_common([object.Name, sweepAndSpheres.Label])
+    
+    try:
+        # common = bp.make_multi_common([object.Name, sweepAndSpheres.Label])
+        common = object.Shape.common(sweepAndSpheres.Shape)
+    except Exception as e:
+        print("Error occurred while creating common shape: ", e)
+        doc.removeObject(sweepAndSpheres.Label)
+        return
+
     doc.recompute()
     mycommon = doc.addObject("Part::Feature", "MyCommon")
     mycommon.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
     mycommon.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
-    mycommon.Shape = common.Shape
+    mycommon.Shape = common # common.Shape
+    doc.recompute()
 
-    doc.removeObject(common.Label)
     doc.removeObject(sweepAndSpheres.Label)
-    if aroundVertex and endSphere1 and endSphere2: # type: ignore
-        doc.removeObject(sweep.Label)
-        doc.removeObject(endSphere1.Label) # type: ignore
-        doc.removeObject(endSphere2.Label) # type: ignore
+    # if aroundVertex and endSphere1 and endSphere2: # type: ignore
+    #     doc.removeObject(sweep.Label)
+    #     doc.removeObject(endSphere1.Label) # type: ignore
+    #     doc.removeObject(endSphere2.Label) # type: ignore
     doc.removeObject(profile.Label)
     doc.removeObject(spine.Label)
     object.Visibility = True
     doc.recompute()
 
     edgeOnCommon = findEdgeOnObject(mycommon.Shape, path_edge)
+    if edgeOnCommon is None:
+        print("No matching edge found on the common shape. The edge might not be part of the common shape.")
+        doc.removeObject(mycommon.Label)
+        doc.recompute()
+        return
     edgeOnCommon_obj = doc.addObject("Part::Feature", "EdgeOnCommon")
     edgeOnCommon_obj.addProperty("App::PropertyInteger", "SurfSenseID", "Base", "", True)
     edgeOnCommon_obj.SurfSenseID = SurfSensePanel.SurfSensePanel._measurement_count
