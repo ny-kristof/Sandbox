@@ -81,6 +81,9 @@ class SandboxWorkbench (Workbench): #type: ignore
         vm.show()
         vm.raise_()
 
+        # Delay the popup slightly so GUI can finish initializing
+        QtCore.QTimer.singleShot(500, surfsense_panel.showConnectionDialog)
+
         Log ('Loading Sandbox module... done\n') # type: ignore
 
     def GetClassName(self):

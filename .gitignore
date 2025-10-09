@@ -9,6 +9,12 @@ __pycache__/*
 # C extensions
 *.so
 
+#GoPxl
+GoPxl/
+
+#ToolConfigurer
+ToolConfigurer/
+
 # Distribution / packaging
 .Python
 build/
