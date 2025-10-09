@@ -9,6 +9,8 @@ import SelectionPlanner
 import NewMeasure
 import CSExporter
 import xml.etree.ElementTree as ET
+import subprocess
+
 
 
 
@@ -400,7 +402,6 @@ class SurfSensePanel(QtWidgets.QWidget):
 
     def saveMeasurementsToXML(self):
         from pathlib import Path
-        
         try:
             documents_dir = Path.home() / "Documents" / "SurfSense"
             documents_dir.mkdir(parents=True, exist_ok=True)  # Create folder if missing
@@ -426,6 +427,74 @@ class SurfSensePanel(QtWidgets.QWidget):
 
         except Exception as e:
             App.Console.PrintError(f"Failed to save the measurements: {e}\n")
+
+        # try:
+        #     # Start the executable and wait for it to complete
+        #     path =  os.path.join(self.loc, "ToolConfigurer\\win64\\ConfigureTool.exe")
+        #     proc = subprocess.Popen([path], shell=True)
+        #     App.Console.PrintMessage("ToolConfigurer started...\n")
+
+        #     proc.wait()  # ⏳ blocks until process exits
+        #     App.Console.PrintMessage("ToolConfigurer finished.\n")
+
+        # except Exception as e:
+        #     App.Console.PrintError(f"Error: {e}\n")
+
+
+    def showConnectionDialog(self):
+        from pathlib import Path
+        from ConnectionDialog import ConnectionDialog
+        import threading
+
+        documents_dir = Path.home() / "Documents" / "SurfSense"
+        documents_dir.mkdir(parents=True, exist_ok=True)
+        json_path = documents_dir / "data.json"
+
+        dlg = ConnectionDialog(json_path)
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            ip = dlg.ip_address
+            port = dlg.port
+
+            App.Console.PrintMessage(f"Starting service for {ip}:{port}\n")
+            path =  os.path.join(self.loc, "GoPxL\\GoPxL\\bin\\win64\\GoPxL.exe")
+
+            try:
+                subprocess.Popen([path], shell=True)
+                App.Console.PrintMessage("Executable started successfully.\n")
+            except Exception as e:
+                App.Console.PrintError(f"Failed to start executable: {e}\n")
+                return
+
+            # 🔄 Start background thread for delayed connection test
+            threading.Thread(
+                target=self.delayed_connection_test,
+                args=(ip, port, 10),  # 10-second delay
+                daemon=True
+            ).start()
+
+        else:
+            App.Console.PrintError("Dialog closed unexpectedly.\n")
+
+    def delayed_connection_test(self, ip, port, delay_seconds):
+        import time
+        """Wait for the service to start, then test connection."""
+        App.Console.PrintMessage(f"Waiting {delay_seconds}s for the service to start...\n")
+        time.sleep(delay_seconds)
+
+        if self.test_connection(ip, port):
+            App.Console.PrintMessage("✅ Connection successful!\n")
+        else:
+            App.Console.PrintError("❌ Unable to connect to service after waiting.\n")
+
+    def test_connection(self, ip, port, timeout=3):
+        import socket
+        """Try to open a TCP connection to the IP and port."""
+        try:
+            with socket.create_connection((ip, port), timeout=timeout):
+                return True
+        except Exception as e:
+            App.Console.PrintError(f"Connection test failed: {e}\n")
+            return False
 
 
     def populateSensorLegendLabel(self):
