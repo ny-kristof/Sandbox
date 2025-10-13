@@ -433,8 +433,8 @@
         <Mounting_type>Console7</Mounting_type>
         <Resolution_XY_NEAR>8</Resolution_XY_NEAR>
         <Resolution_XY_FAR>8</Resolution_XY_FAR>
-        <Field_of_View_NEAR>21 x 512</Field_of_View_NEAR>
-        <Field_of_View_FAR>25 x 512</Field_of_View_FAR>
+        <Field_of_View_NEAR>21 x 51.2</Field_of_View_NEAR>
+        <Field_of_View_FAR>25 x 51.2</Field_of_View_FAR>
         <FoV_type>-</FoV_type>
         <Clearance_Distance>59.5</Clearance_Distance>
         <Measurement_Range_Z>18</Measurement_Range_Z>
